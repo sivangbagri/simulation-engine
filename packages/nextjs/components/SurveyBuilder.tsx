@@ -150,7 +150,7 @@ const SurveyBuilder: React.FC = () => {
         <div className="min-h-screen bg-neutral-950 text-neutral-50 p-6">
             <div className="max-w-4xl mx-auto">
                 <div className="mb-12 text-center">
-                    <h1 className="text-4xl font-bold mb-4 text-white">Build your Survey</h1>
+                    <h1 className="text-4xl font-bold mb-4 text-white">Buihhld your Survey</h1>
                     <p className="text-neutral-400 text-lg">Create beautifully-designed, accessible surveys with an intuitive builder</p>
                 </div>
 

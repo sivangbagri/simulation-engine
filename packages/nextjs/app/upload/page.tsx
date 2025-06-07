@@ -2,15 +2,74 @@
 
 import React, { useState, useRef } from 'react';
 import { Upload, FileArchive, Download, ExternalLink, CheckCircle, AlertCircle } from 'lucide-react';
-
+import PersonaCard from "~~/components/Persona/PersonaCard"
 interface UploadState {
     isDragging: boolean;
     file: File | null;
     isUploaded: boolean;
     error: string | null;
 }
-
+import { PersonaData } from "~~/components/Persona/PersonaCard"
 const TwitterArchiveUploader: React.FC = () => {
+    const sampleData = {
+        basic_info: {
+            username: "WhySid",
+            screen_name: "Sidhanth_here",
+            bio: "",
+            location: "",
+            website: "",
+            followers_count: 0,
+            following_count: 0,
+            account_creation: "2022-08-31T13:49:36.815Z",
+            activity_period: "Sep 2022 to May 2025",
+            tweet_count: 15716,
+        },
+        interests: ["Finance", "Crypto/Blockchain", "Gaming", "Technology", "Sports"],
+        personality_traits: ["Creative", "Independent", "Optimistic", "Curious", "Collaborative"],
+        communication_style: {
+            tone: "Neutral",
+            formality: "Semi-formal",
+            engagement: ["Conversational"],
+            emoji_usage: "Occasional",
+        },
+        frequent_topics: ["https", "hai", "mai", "nahi", "toh", "time", "one", "people", "bhai", "like"],
+        top_hashtags: [
+            "100DaysOfHustle",
+            "100DaysOfCode",
+            "100DaysofHustle",
+            "100daysofcodechallenge",
+            "100daysofcodepython",
+            "buildinpublic",
+            "startups",
+            "NewProfilePic",
+            "buildinginpublic",
+            "Entrepreneurship",
+        ],
+        activity_patterns: {
+            most_active_hours: [19, 8, 11],
+            most_active_days: ["Monday", "Thursday", "Friday"],
+            posting_frequency: "Very active (multiple posts daily)",
+        },
+        social_interactions: {
+            most_mentioned_users: ["avgphoenixguy", "_rishabh__r4", "shivuuuuu264", "pennedbyher", "aShubhamz"],
+            reply_percentage: 71.9,
+            retweet_percentage: 2.9,
+            interaction_style: "Highly interactive",
+        },
+        likes_analysis: {
+            top_liked_hashtags: [],
+            liked_topics: [
+                "https",
+                "hai",
+                "people",
+                "like",
+                "one",
+                "bhai",
+
+            ],
+        },
+    }
+    const [currentPersona, setCurrentPersona] = useState<PersonaData>(sampleData);
     const [uploadState, setUploadState] = useState<UploadState>({
         isDragging: false,
         file: null,
@@ -58,13 +117,16 @@ const TwitterArchiveUploader: React.FC = () => {
             if (!res.ok) {
                 throw new Error(result.message || "Upload failed");
             }
-            console.log("Upload result:", result);
+            setCurrentPersona(result.persona)
+
             setUploadState({
                 isDragging: false,
                 file,
                 isUploaded: true,
                 error: null
             });
+
+            console.log("Upload result:", result);
         } catch (err: any) {
             setUploadState(prev => ({
                 ...prev,
@@ -152,46 +214,42 @@ const TwitterArchiveUploader: React.FC = () => {
                             </div>
                         </div>
                     ) : (
-                        <div className="p-8">
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center space-x-3">
-                                    <div className="p-2 bg-green-500/20 rounded-lg">
-                                        <CheckCircle size={24} className="text-green-400" />
+                        <>
+                            <div className="p-8">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center space-x-3">
+                                        <div className="p-2 bg-green-500/20 rounded-lg">
+                                            <CheckCircle size={24} className="text-green-400" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-medium text-neutral-100">Archive Uploaded Successfully</h3>
+                                            <p className="text-neutral-400 text-sm">Ready for processing</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h3 className="text-lg font-medium text-neutral-100">Archive Uploaded Successfully</h3>
-                                        <p className="text-neutral-400 text-sm">Ready for processing</p>
-                                    </div>
+                                    <button
+                                        onClick={resetUpload}
+                                        className="px-4 py-2 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50 rounded-lg transition-colors"
+                                    >
+                                        Upload Different File
+                                    </button>
+
+
+
                                 </div>
-                                <button
-                                    onClick={resetUpload}
-                                    className="px-4 py-2 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50 rounded-lg transition-colors"
-                                >
-                                    Upload Different File
-                                </button>
+
+
+
+
+
+
                             </div>
 
-                            <div className="bg-neutral-800/30 rounded-lg p-4 flex items-center space-x-4">
-                                <FileArchive size={20} className="text-neutral-400" />
-                                <div className="flex-1">
-                                    <p className="text-neutral-200 font-medium">{uploadState.file?.name}</p>
-                                    <p className="text-neutral-400 text-sm">{uploadState.file && formatFileSize(uploadState.file.size)}</p>
-                                </div>
-                            </div>
-
-                            <div className="mt-6 flex space-x-4">
-                                <button className="flex-1 px-6 py-3 bg-white text-black hover:bg-neutral-100 rounded-lg font-medium transition-colors shadow-lg">
-                                    Start Analysis
-                                </button>
-                                <button className="px-6 py-3 bg-neutral-800/50 hover:bg-neutral-700/50 border border-neutral-700/50 rounded-lg font-medium transition-colors">
-                                    View Details
-                                </button>
-                            </div>
-                        </div>
+                            {<PersonaCard data={currentPersona} />}
+                        </>
                     )}
                 </div>
                 {/* Instructions */}
-                <div className="bg-neutral-900/50 backdrop-blur-sm rounded-xl p-6 mb-8 border border-neutral-800/50 shadow-xl my-5">
+                <div className="bg-neutral-900/50 backdrop-blur-sm rounded-xl p-6 mb-8 border border-neutral-800/50 shadow-xl my-7">
                     <h2 className="text-xl font-semibold mb-4 text-neutral-100 flex items-center space-x-2">
                         <Download size={20} />
                         <span>How to get your Twitter Archive</span>
