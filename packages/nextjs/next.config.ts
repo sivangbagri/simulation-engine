@@ -14,6 +14,12 @@ const nextConfig: NextConfig = {
     config.externals.push("pino-pretty", "lokijs", "encoding");
     return config;
   },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "500mb",
+      serverActions: true,
+    },
+  }
 };
 
 const isIpfs = process.env.NEXT_PUBLIC_IPFS_BUILD === "true";
