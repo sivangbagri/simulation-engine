@@ -188,7 +188,7 @@ const SurveyBuilder: React.FC = () => {
                                 <h3 className="text-lg font-medium text-neutral-100">Question {questionIndex + 1}</h3>
                                 <button
                                     onClick={() => deleteQuestion(question.id)}
-                                    className="text-neutral-400 hover:text-red-400 transition-colors duration-200 p-1 rounded-md hover:bg-neutral-800/50"
+                                    className="cursor-pointer text-neutral-400 hover:text-red-400 transition-colors duration-200 p-1 rounded-md hover:bg-neutral-800/50"
                                     aria-label={`Delete question ${questionIndex + 1}`}
                                 >
                                     <Trash2 size={18} />
@@ -225,7 +225,7 @@ const SurveyBuilder: React.FC = () => {
                                                 {question.options.length > 2 && (
                                                     <button
                                                         onClick={() => deleteOption(question.id, option.id)}
-                                                        className="text-neutral-400 hover:text-red-400 transition-colors duration-200 p-1.5 rounded-md hover:bg-neutral-800/50"
+                                                        className="cursor-pointer text-neutral-400 hover:text-red-400 transition-colors duration-200 p-1.5 rounded-md hover:bg-neutral-800/50"
                                                         aria-label={`Delete option ${optionIndex + 1}`}
                                                     >
                                                         <Trash2 size={16} />
@@ -237,7 +237,7 @@ const SurveyBuilder: React.FC = () => {
                                     {question.options.length < 4 && (
                                         <button
                                             onClick={() => addOption(question.id)}
-                                            className="mt-3 text-neutral-400 hover:text-neutral-200 text-sm flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-neutral-800/30 transition-all duration-200"
+                                            className="cursor-pointer mt-3 text-neutral-400 hover:text-neutral-200 text-sm flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-neutral-800/30 transition-all duration-200"
                                         >
                                             <Plus size={16} />
                                             <span>Add option</span>
@@ -253,10 +253,10 @@ const SurveyBuilder: React.FC = () => {
                 <div className="mt-8">
                     <button
                         onClick={addQuestion}
-                        className="w-full py-4 bg-neutral-800/30 hover:bg-neutral-800/50 border border-neutral-700/50 rounded-xl transition-all duration-200 flex items-center justify-center space-x-3 text-neutral-300 hover:text-neutral-100 backdrop-blur-sm"
+                        className="cursor-pointer w-full py-4 bg-neutral-800/30 hover:bg-neutral-800/50 border border-neutral-700/50 rounded-xl transition-all duration-200 flex items-center justify-center space-x-3 text-neutral-300 hover:text-neutral-100 backdrop-blur-sm"
                     >
                         <Plus size={20} />
-                        <span className="font-medium">Add Question</span>
+                        <span className="font-medium ">Add Question</span>
                     </button>
                 </div>
 
