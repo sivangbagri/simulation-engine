@@ -117,7 +117,7 @@ const TwitterArchiveUploader: React.FC = () => {
             if (!res.ok) {
                 throw new Error(result.message || "Upload failed");
             }
-            setCurrentPersona(result.persona)
+            setCurrentPersona(result.persona) // {success : bool , message : string , persona: {}}
 
             setUploadState({
                 isDragging: false,
@@ -179,7 +179,13 @@ const TwitterArchiveUploader: React.FC = () => {
         <div className="min-h-screen bg-neutral-950 text-neutral-50 p-6">
             <div className="max-w-4xl mx-auto">
 
-
+                {/* Error Message */}
+                {uploadState.error && (
+                    <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center space-x-3">
+                        <AlertCircle size={20} className="text-red-400 flex-shrink-0" />
+                        <p className="text-red-300">{uploadState.error}</p>
+                    </div>
+                )}
 
                 {/* Upload Area */}
                 <div className="bg-neutral-900/30 backdrop-blur-sm rounded-xl border border-neutral-800/30 shadow-lg overflow-hidden">
@@ -232,19 +238,10 @@ const TwitterArchiveUploader: React.FC = () => {
                                     >
                                         Upload Different File
                                     </button>
-
-
-
                                 </div>
-
-
-
-
-
-
                             </div>
 
-                            {<PersonaCard data={currentPersona} />}
+                           <div className='flex justify-center'> {<PersonaCard data={currentPersona} />}</div>
                         </>
                     )}
                 </div>
@@ -280,13 +277,7 @@ const TwitterArchiveUploader: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Error Message */}
-                {uploadState.error && (
-                    <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center space-x-3">
-                        <AlertCircle size={20} className="text-red-400 flex-shrink-0" />
-                        <p className="text-red-300">{uploadState.error}</p>
-                    </div>
-                )}
+
 
                 {/* Hidden file input */}
                 <input

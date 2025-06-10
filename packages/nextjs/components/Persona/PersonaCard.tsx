@@ -56,59 +56,53 @@ export default function PersonaCard({ data }: PersonaCardProps) {
   const activity = getActivityLevel(data.basic_info.tweet_count)
 
   return (
-    <Card className="w-full max-w-2xl bg-black border-white/20 border-2 p-6 text-white rounded-2xl">
-      <div className="flex items-start gap-6">
-        {/* Avatar */}
-        <div className="flex-shrink-0">
-          <div className="w-20 h-20 rounded-full border-2 border-white/30 bg-transparent flex items-center justify-center">
-            <span className="text-2xl font-bold text-white">{data.basic_info.username.charAt(0).toUpperCase()}</span>
-          </div>
+    <Card className="w-full max-w-xl bg-[#0f0f0f] border border-white/10 p-6 rounded-2xl shadow-md backdrop-blur-sm">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+  
+      {/* Avatar + Activity */}
+      <div className="flex flex-col items-center gap-3 sm:w-1/4">
+        <div className="w-20 h-20 rounded-full border border-white/10 bg-black/30 flex items-center justify-center text-3xl font-semibold text-white">
+          {data.basic_info.username.charAt(0).toUpperCase()}
         </div>
-
-        {/* Main Content */}
-        <div className="flex-1 space-y-4">
-          {/* Username and Screen Name */}
-          <div>
-            <h2 className="text-2xl font-bold text-white">{data.basic_info.username}</h2>
-            <p className="text-white/70 text-sm">@{data.basic_info.screen_name}</p>
-          </div>
-
-          {/* Interests */}
-          <div className="flex flex-wrap gap-2">
-            {data.interests.map((interest, index) => (
-              <Badge
-                key={index}
-                variant="outline"
-                className="border-white/30 text-white bg-transparent hover:bg-white/10 rounded-full px-3 py-1"
-              >
-                {interest}
-              </Badge>
-            ))}
-          </div>
-
-          {/* Top Hashtags - Individual Pills */}
-          <div className="space-y-2">
-            <div className="flex flex-wrap gap-2">
-              {data.top_hashtags.slice(0, 7).map((hashtag, index) => (
-                <Badge
-                  key={index}
-                  variant="outline"
-                  className="border-white/30 text-white bg-transparent hover:bg-white/10 rounded-full px-3 py-1 text-xs"
-                >
-                  #{hashtag}
-                </Badge>
-              ))}
-            </div>
-          </div>
+        <Badge className={`${activity.color} text-white text-xs font-medium rounded-xl px-3 py-1`}>
+          {activity.level} {activity.text}
+        </Badge>
+      </div>
+  
+      {/* User Info */}
+      <div className="flex-1 space-y-4">
+        <div>
+          <h2 className="text-2xl font-semibold text-white">{data.basic_info.username}</h2>
+          <p className="text-sm text-white/50">@{data.basic_info.screen_name}</p>
         </div>
-
-        {/* Activity Indicator */}
-        <div className="flex-shrink-0">
-          <Badge className={`${activity.color} text-white hover:${activity.color}/90 rounded-full px-3 py-1`}>
-            {activity.level} {activity.text}
-          </Badge>
+  
+        {/* Interests */}
+        <div className="flex flex-wrap gap-2">
+          {data.interests.map((interest, index) => (
+            <Badge
+              key={index}
+              className="bg-white/5 border border-white/10 text-white text-xs rounded-full px-3 py-1 hover:bg-white/10 transition"
+            >
+              {interest}
+            </Badge>
+          ))}
+        </div>
+  
+        {/* Hashtags */}
+        <div className="flex flex-wrap gap-2">
+          {data.top_hashtags.slice(0, 7).map((hashtag, index) => (
+            <Badge
+              key={index}
+              className="bg-white text-black text-xs font-medium rounded-full px-3 py-1 hover:bg-white/90 transition"
+            >
+              #{hashtag}
+            </Badge>
+          ))}
         </div>
       </div>
-    </Card>
+    </div>
+  </Card>
+  
+
   )
 }
