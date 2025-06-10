@@ -1,7 +1,11 @@
 import { Badge } from "~~/components/ui/badge"
 import { Card } from "~~/components/ui/card"
+import { BlockieAvatar } from "~~/components/scaffold-eth";
+
 
 export interface PersonaData {
+  address:`0x${string}`,
+  niche:string,
   basic_info: {
     username: string
     screen_name: string
@@ -62,7 +66,7 @@ export default function PersonaCard({ data }: PersonaCardProps) {
       {/* Avatar + Activity */}
       <div className="flex flex-col items-center gap-3 sm:w-1/4">
         <div className="w-20 h-20 rounded-full border border-white/10 bg-black/30 flex items-center justify-center text-3xl font-semibold text-white">
-          {data.basic_info.username.charAt(0).toUpperCase()}
+        <BlockieAvatar address={data.address || "0x34aA3F359A9D614239015126635CE7732c18fDF3"} size={60} />
         </div>
         <Badge className={`${activity.color} text-white text-xs font-medium rounded-xl px-3 py-1`}>
           {activity.level} {activity.text}

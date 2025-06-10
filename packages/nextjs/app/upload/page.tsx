@@ -1,15 +1,21 @@
 "use client"
 
 import React, { useState, useRef } from 'react';
-import { Upload, FileArchive, Download, ExternalLink, CheckCircle, AlertCircle } from 'lucide-react';
+import { useAccount } from "wagmi";
+
+import { Upload, FileArchive, Download, ExternalLink, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import PersonaCard from "~~/components/Persona/PersonaCard"
 interface UploadState {
     isDragging: boolean;
     file: File | null;
     isUploaded: boolean;
     error: string | null;
+    isProcessing: boolean;
+    processingStep: string;
 }
 import { PersonaData } from "~~/components/Persona/PersonaCard"
+import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+
 const TwitterArchiveUploader: React.FC = () => {
     const sampleData = {
         basic_info: {
@@ -74,19 +80,28 @@ const TwitterArchiveUploader: React.FC = () => {
         isDragging: false,
         file: null,
         isUploaded: false,
-        error: null
+        error: null,
+        isProcessing: false,
+        processingStep: ''
     });
+    const { address: connectedAddress } = useAccount();
+    const { writeContractAsync: writeYourContractAsync, isPending } = useScaffoldWriteContract({ contractName: "Persona" });
+
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleDragOver = (e: React.DragEvent<HTMLDivElement>): void => {
         e.preventDefault();
-        setUploadState(prev => ({ ...prev, isDragging: true }));
+        if (!uploadState.isProcessing) {
+            setUploadState(prev => ({ ...prev, isDragging: true }));
+        }
     };
 
     const handleDragLeave = (e: React.DragEvent<HTMLDivElement>): void => {
         e.preventDefault();
-        setUploadState(prev => ({ ...prev, isDragging: false }));
+        if (!uploadState.isProcessing) {
+            setUploadState(prev => ({ ...prev, isDragging: false }));
+        }
     };
 
     const validateFile = (file: File): string | null => {
@@ -105,9 +120,19 @@ const TwitterArchiveUploader: React.FC = () => {
             setUploadState(prev => ({ ...prev, error, isDragging: false }));
             return;
         }
+
+        setUploadState(prev => ({
+            ...prev,
+            isProcessing: true,
+            isDragging: false,
+            error: null,
+            processingStep: 'Uploading and processing archive...'
+        }));
+
         try {
             const formData = new FormData();
             formData.append('file', file)
+
             const res = await fetch("api/persona", {
                 method: 'POST',
                 body: formData
@@ -117,20 +142,53 @@ const TwitterArchiveUploader: React.FC = () => {
             if (!res.ok) {
                 throw new Error(result.message || "Upload failed");
             }
+
             setCurrentPersona(result.persona) // {success : bool , message : string , persona: {}}
 
-            setUploadState({
-                isDragging: false,
-                file,
-                isUploaded: true,
-                error: null
-            });
+            setUploadState(prev => ({
+                ...prev,
+                processingStep: 'Saving to blockchain...'
+            }));
 
             console.log("Upload result:", result);
+
+            // saving on chain 
+            try {
+                await writeYourContractAsync(
+                    {
+                        functionName: "setPersona",
+                        args: [JSON.stringify({ address: connectedAddress, niche: "generic", ...result.persona })],
+
+                    },
+                    {
+                        onBlockConfirmation: (txnReceipt: any) => {
+                            console.log("📦 Transaction blockHash", txnReceipt.blockHash);
+                        },
+                    },
+                );
+
+                setUploadState(prev => ({
+                    ...prev,
+                    file,
+                    isUploaded: true,
+                    isProcessing: false,
+                    processingStep: ''
+                }));
+
+            } catch (e) {
+                console.error("Error setting persona:", e);
+                setUploadState(prev => ({
+                    ...prev,
+                    isProcessing: false,
+                    error: "Failed to save to blockchain. Please try again."
+                }));
+            }
+
         } catch (err: any) {
             setUploadState(prev => ({
                 ...prev,
                 isUploaded: false,
+                isProcessing: false,
                 error: err.message || "An unexpected error occurred"
             }));
         };
@@ -138,32 +196,42 @@ const TwitterArchiveUploader: React.FC = () => {
 
     const handleDrop = (e: React.DragEvent<HTMLDivElement>): void => {
         e.preventDefault();
-        const files = Array.from(e.dataTransfer.files);
-        if (files.length > 0) {
-            handleFileUpload(files[0]);
+        if (!uploadState.isProcessing) {
+            const files = Array.from(e.dataTransfer.files);
+            if (files.length > 0) {
+                handleFileUpload(files[0]);
+            }
         }
     };
 
     const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
-        const files = Array.from(e.target.files || []);
-        if (files.length > 0) {
-            handleFileUpload(files[0]);
+        if (!uploadState.isProcessing) {
+            const files = Array.from(e.target.files || []);
+            if (files.length > 0) {
+                handleFileUpload(files[0]);
+            }
         }
     };
 
     const handleUploadClick = (): void => {
-        fileInputRef.current?.click();
+        if (!uploadState.isProcessing) {
+            fileInputRef.current?.click();
+        }
     };
 
     const resetUpload = (): void => {
-        setUploadState({
-            isDragging: false,
-            file: null,
-            isUploaded: false,
-            error: null
-        });
-        if (fileInputRef.current) {
-            fileInputRef.current.value = '';
+        if (!uploadState.isProcessing && !isPending) {
+            setUploadState({
+                isDragging: false,
+                file: null,
+                isUploaded: false,
+                error: null,
+                isProcessing: false,
+                processingStep: ''
+            });
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
         }
     };
 
@@ -189,15 +257,38 @@ const TwitterArchiveUploader: React.FC = () => {
 
                 {/* Upload Area */}
                 <div className="bg-neutral-900/30 backdrop-blur-sm rounded-xl border border-neutral-800/30 shadow-lg overflow-hidden">
-                    {!uploadState.isUploaded ? (
+                    {uploadState.isProcessing ? (
+                        <div className="p-12 text-center">
+                            <div className="flex flex-col items-center space-y-4">
+                                <div className="p-4 rounded-full bg-blue-500/20">
+                                    <Loader2 size={48} className="text-blue-400 animate-spin" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-medium text-neutral-100 mb-2">
+                                        Processing Archive
+                                    </h3>
+                                    <p className="text-neutral-400 mb-4">
+                                        {uploadState.processingStep}
+                                    </p>
+                                    {isPending && (
+                                        <div className="flex items-center justify-center space-x-2 text-sm text-neutral-500">
+                                            <Loader2 size={16} className="animate-spin" />
+                                            <span>Waiting for blockchain confirmation...</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <p className="text-sm text-neutral-500">This may take a few moments</p>
+                            </div>
+                        </div>
+                    ) : !uploadState.isUploaded ? (
                         <div
                             onDragOver={handleDragOver}
                             onDragLeave={handleDragLeave}
                             onDrop={handleDrop}
                             onClick={handleUploadClick}
                             className={`p-12 text-center cursor-pointer transition-all duration-200 ${uploadState.isDragging
-                                ? 'bg-neutral-800/50 border-neutral-600/50'
-                                : 'hover:bg-neutral-800/30'
+                                    ? 'bg-neutral-800/50 border-neutral-600/50'
+                                    : 'hover:bg-neutral-800/30'
                                 }`}
                         >
                             <div className="flex flex-col items-center space-y-4">
@@ -234,14 +325,25 @@ const TwitterArchiveUploader: React.FC = () => {
                                     </div>
                                     <button
                                         onClick={resetUpload}
-                                        className="px-4 py-2 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50 rounded-lg transition-colors"
+                                        disabled={uploadState.isProcessing || isPending}
+                                        className={`px-4 py-2 rounded-lg transition-colors ${uploadState.isProcessing || isPending
+                                                ? 'text-neutral-600 cursor-not-allowed'
+                                                : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
+                                            }`}
                                     >
-                                        Upload Different File
+                                        {uploadState.isProcessing || isPending ? (
+                                            <div className="flex items-center space-x-2">
+                                                <Loader2 size={16} className="animate-spin" />
+                                                <span>Processing...</span>
+                                            </div>
+                                        ) : (
+                                            'Upload Different File'
+                                        )}
                                     </button>
                                 </div>
                             </div>
 
-                           <div className='flex justify-center'> {<PersonaCard data={currentPersona} />}</div>
+                            <div className='flex justify-center'> {<PersonaCard data={currentPersona} />}</div>
                         </>
                     )}
                 </div>
@@ -286,6 +388,7 @@ const TwitterArchiveUploader: React.FC = () => {
                     accept=".zip"
                     onChange={handleFileInputChange}
                     className="hidden"
+                    disabled={uploadState.isProcessing}
                 />
 
 
