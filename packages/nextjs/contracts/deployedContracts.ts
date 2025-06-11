@@ -152,7 +152,7 @@ const deployedContracts = {
       deploymentScript: "Deploy.s.sol",
     },
     Persona: {
-      address: "0x7a79696602a72873a85af658f81ddad7b562ccc0",
+      address: "0x999201b4f3f88384764f9c944fcc69410661350c",
       abi: [
         {
           type: "constructor",
@@ -324,7 +324,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deploymentFile: "run-1749578334.json",
+      deploymentFile: "run-1749660702.json",
       deploymentScript: "Deploy.s.sol",
     },
   },

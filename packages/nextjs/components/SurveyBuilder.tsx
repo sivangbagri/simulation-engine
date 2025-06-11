@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, Download, Send } from 'lucide-react';
+import { redirect } from '~~/node_modules/next/navigation';
+import { useRouter } from 'next/navigation';
 
 // TypeScript interfaces
 interface Option {
@@ -34,7 +36,7 @@ const SurveyBuilder: React.FC = () => {
         description: '',
         questions: []
     });
-
+    const router =useRouter();
     const addQuestion = (): void => {
         const newQuestion: Question = {
             id: generateId(),
@@ -123,8 +125,10 @@ const SurveyBuilder: React.FC = () => {
     };
 
     const handleSubmit = (): void => {
-        console.log('Survey submitted:', survey);
-        alert('Survey submitted! Check console for details.');
+        sessionStorage.setItem('surveyJSON', JSON.stringify(survey));
+
+        router.push("/result")
+         
     };
 
     const handleSurveyTitleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
