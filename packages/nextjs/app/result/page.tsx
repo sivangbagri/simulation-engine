@@ -1,33 +1,96 @@
 "use client"
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 import Link from "next/link"
 
 import { SimulationInput, SimulationOutput, Persona, Survey } from "~~/types/simulation"
 import PersonaCard from '~~/components/Persona/PersonaCard';
+
+// Survey processing function
+function processSurveyResults(surveyJSON: Survey, backendResults: SimulationOutput): Survey {
+    // Create a deep copy of the survey to avoid mutating the original
+    const processedSurvey: Survey = JSON.parse(JSON.stringify(surveyJSON));
+
+    // Get total number of responses
+    const totalResponses = backendResults.results.length;
+
+    // Initialize counters for each option
+    const optionCounts: Record<string, number> = {};
+
+    // Process each question
+    processedSurvey.questions.forEach((question) => {
+        // Initialize counters for this question's options
+        question.options.forEach((option) => {
+            optionCounts[option.id] = 0;
+        });
+
+        // Count responses for this question
+        backendResults.results.forEach((personaResult) => {
+            const response = personaResult.responses.find(
+                (r) => r.question_id === question.id
+            );
+            if (response && optionCounts.hasOwnProperty(response.selected_option_id)) {
+                optionCounts[response.selected_option_id]++;
+            }
+        });
+
+        // Calculate percentages and add to options
+        question.options.forEach((option) => {
+            const count = optionCounts[option.id];
+            const percentage = totalResponses > 0 ? Math.round((count / totalResponses) * 100) : 0;
+
+            // Add the calculated values to the option
+            (option as any).responses = count;
+            (option as any).percentage = percentage;
+        });
+    });
+
+    return processedSurvey;
+}
+
 const Result: React.FC = () => {
     const [results, setResults] = useState<SimulationOutput | null>(null);
-    const [allPersonas, setAllPersonas] = useState<Persona[]>([
-
-    ])
+    const [allPersonas, setAllPersonas] = useState<Persona[]>([])
     const [parsedSurvey, setParsedSurvey] = useState<Survey>(
-        {
-            title: "Sample Survey",
-            description: "Test survey",
-            questions: [
-                {
-                    id: "q1",
-                    text: "What's your favorite color?",
-                    options: [
-                        { id: "opt1", text: "Red" },
-                        { id: "opt2", text: "Blue" },
-                        { id: "opt3", text: "Green" }
-                    ]
-                }
-            ]
-        },
+
     )
     const [loading, setLoading] = useState(false)
+
+    // Process survey data with results
+    const processedSurveyData = useMemo(() => {
+        if (!parsedSurvey || !results) {
+            return {
+                title: parsedSurvey?.title || "Sample Survey",
+                description: parsedSurvey?.description || "Test survey",
+                responses: 0,
+                questions: parsedSurvey?.questions?.map(q => ({
+                    ...q,
+                    options: q.options.map(opt => ({
+                        ...opt,
+                        percentage: 0,
+                        responses: 0
+                    }))
+                })) || []
+            };
+        }
+
+        const processed = processSurveyResults(parsedSurvey, results);
+        return {
+            title: processed.title,
+            description: processed.description,
+            responses: results.results.length,
+            questions: processed.questions.map(q => ({
+                ...q,
+                options: q.options.map(opt => ({
+                    text: opt.text,
+                    percentage: (opt as any).percentage || 0,
+                    responses: (opt as any).responses || 0
+                }))
+            }))
+        };
+    }, [parsedSurvey, results]);
+
+    // Keep your existing hardcoded data as fallback
     const surveyData = {
         title: "Product Feedback Survey",
         description: "We'd love to hear your thoughts on our new product features",
@@ -61,10 +124,12 @@ const Result: React.FC = () => {
             { id: "4", name: "Emma L.", status: "completed" },
         ],
     }
+
     const { data: allPersona } = useScaffoldReadContract({
         contractName: "Persona",
         functionName: "getAllPersonas"
     })
+
     useEffect(() => {
         console.log("from contract", (allPersona?.[1]));
 
@@ -117,6 +182,7 @@ const Result: React.FC = () => {
             setLoading(false);
         }
     }, [parsedSurvey, allPersonas, simulateSurvey]);
+
     useEffect(() => {
         // Load survey from session storage
         const storedState = sessionStorage.getItem('surveyJSON');
@@ -146,8 +212,12 @@ const Result: React.FC = () => {
         }
     }, [parsedSurvey, allPersonas, handleSimulate, results]);
 
+    // Determine which data to display
+    const displayData = results ? processedSurveyData : surveyData;
 
     console.log("results ", results)
+    console.log("processed survey data ", processedSurveyData)
+
     return (
         <div className="min-h-screen bg-neutral-900 text-white">
             <div className="container mx-auto px-4 py-8">
@@ -164,22 +234,27 @@ const Result: React.FC = () => {
                 </div>
 
                 <div className="max-w-6xl mx-auto space-y-8">
-
                     {/* Survey Info */}
                     <div className="bg-neutral-800 rounded-2xl p-6 border border-neutral-700">
-                        <h2 className="text-xl font-semibold mb-2">{surveyData.title}</h2>
-                        <p className="text-neutral-400 mb-4">{surveyData.description}</p>
+                        <h2 className="text-xl font-semibold mb-2">{displayData.title}</h2>
+                        <p className="text-neutral-400 mb-4">{displayData.description}</p>
                         <span className="inline-block px-3 py-1 bg-neutral-700 rounded-full text-sm text-neutral-300">
-                            {surveyData.responses} responses
+                            {displayData.responses} responses
                         </span>
+                        {loading && (
+                            <div className="mt-4 flex items-center gap-2">
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                <span className="text-sm text-neutral-400">Processing survey results...</span>
+                            </div>
+                        )}
                     </div>
 
                     {/* Responses */}
                     <div className="bg-neutral-800 rounded-2xl p-6 border border-neutral-700">
                         <h2 className="text-xl font-semibold mb-6">Responses</h2>
                         <div className="space-y-8">
-                            {surveyData.questions.map((question, index) => (
-                                <div key={question.id}>
+                            {displayData.questions.map((question, index) => (
+                                <div key={question.id || index}>
                                     <h3 className="font-semibold text-lg mb-4">
                                         Question {index + 1}: {question.text}
                                     </h3>
@@ -212,13 +287,10 @@ const Result: React.FC = () => {
                         {allPersonas?.map((persona: Persona) => (
                             <PersonaCard key={persona.address} data={persona} />
                         ))}
-
-
                     </div>
                 </div>
             </div>
         </div>
-
     )
 }
 
