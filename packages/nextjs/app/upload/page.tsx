@@ -13,12 +13,16 @@ interface UploadState {
     isProcessing: boolean;
     processingStep: string;
 }
+import { RainbowKitCustomConnectButton } from "~~/components/scaffold-eth";
+
 import { PersonaData } from "~~/components/Persona/PersonaCard"
 import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 
 const TwitterArchiveUploader: React.FC = () => {
     const sampleData = {
         basic_info: {
+            address:"0x123",
+            niche:"string",
             username: "WhySid",
             screen_name: "Sidhanth_here",
             bio: "",
@@ -85,6 +89,7 @@ const TwitterArchiveUploader: React.FC = () => {
         processingStep: ''
     });
     const { address: connectedAddress } = useAccount();
+
     const { writeContractAsync: writeYourContractAsync, isPending } = useScaffoldWriteContract({ contractName: "Persona" });
 
 
@@ -257,7 +262,7 @@ const TwitterArchiveUploader: React.FC = () => {
 
                 {/* Upload Area */}
                 <div className="bg-neutral-900/30 backdrop-blur-sm rounded-xl border border-neutral-800/30 shadow-lg overflow-hidden">
-                    {uploadState.isProcessing ? (
+                    {connectedAddress ? uploadState.isProcessing ? (
                         <div className="p-12 text-center">
                             <div className="flex flex-col items-center space-y-4">
                                 <div className="p-4 rounded-full bg-blue-500/20">
@@ -287,8 +292,8 @@ const TwitterArchiveUploader: React.FC = () => {
                             onDrop={handleDrop}
                             onClick={handleUploadClick}
                             className={`p-12 text-center cursor-pointer transition-all duration-200 ${uploadState.isDragging
-                                    ? 'bg-neutral-800/50 border-neutral-600/50'
-                                    : 'hover:bg-neutral-800/30'
+                                ? 'bg-neutral-800/50 border-neutral-600/50'
+                                : 'hover:bg-neutral-800/30'
                                 }`}
                         >
                             <div className="flex flex-col items-center space-y-4">
@@ -327,8 +332,8 @@ const TwitterArchiveUploader: React.FC = () => {
                                         onClick={resetUpload}
                                         disabled={uploadState.isProcessing || isPending}
                                         className={`px-4 py-2 rounded-lg transition-colors ${uploadState.isProcessing || isPending
-                                                ? 'text-neutral-600 cursor-not-allowed'
-                                                : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
+                                            ? 'text-neutral-600 cursor-not-allowed'
+                                            : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50'
                                             }`}
                                     >
                                         {uploadState.isProcessing || isPending ? (
@@ -345,7 +350,8 @@ const TwitterArchiveUploader: React.FC = () => {
 
                             <div className='flex justify-center'> {<PersonaCard data={currentPersona} />}</div>
                         </>
-                    )}
+                    )
+                        : <p className='flex justify-center items-center mx-auto my-10'> <RainbowKitCustomConnectButton /> </p>}
                 </div>
                 {/* Instructions */}
                 <div className="bg-neutral-900/50 backdrop-blur-sm rounded-xl p-6 mb-8 border border-neutral-800/50 shadow-xl my-7">

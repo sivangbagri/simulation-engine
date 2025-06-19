@@ -42,7 +42,7 @@ def simulate(input: SimulationInput):
         }
 
         for q in input.survey.questions:
-            option_texts = [opt.text for opt in q.options]
+            option_texts = [f"{q.text} {opt.text}" for opt in q.options]
             option_embeddings = model.encode(option_texts, convert_to_tensor=True)
 
             similarities = util.cos_sim(persona_embedding, option_embeddings)[0]

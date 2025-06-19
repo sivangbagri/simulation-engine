@@ -168,7 +168,7 @@ const SurveyBuilder: React.FC = () => {
                                 value={survey.title}
                                 onChange={handleSurveyTitleChange}
                                 className="w-full px-4 py-3 bg-neutral-800/50 border border-neutral-700/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:border-neutral-500 transition-all duration-200 text-neutral-100 placeholder-neutral-500"
-                                placeholder="Enter survey title"
+                                placeholder="PS5 Rental Marketplace"
                             />
                         </div>
                         <div>
@@ -207,7 +207,7 @@ const SurveyBuilder: React.FC = () => {
                                         value={question.text}
                                         onChange={handleQuestionTextChange(question.id)}
                                         className="w-full px-4 py-3 bg-neutral-800/50 border border-neutral-700/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:border-neutral-500 transition-all duration-200 text-neutral-100 placeholder-neutral-500"
-                                        placeholder="Enter your question"
+                                        placeholder="What would motivate you to rent a PS5?"
                                     />
                                 </div>
 
@@ -269,7 +269,7 @@ const SurveyBuilder: React.FC = () => {
                     <button
                         onClick={exportSurvey}
                         disabled={isSubmitDisabled}
-                        className="flex-1 px-6 py-4 bg-neutral-800/50 hover:bg-neutral-700/50 disabled:bg-neutral-800/30 disabled:opacity-50 disabled:cursor-not-allowed border border-neutral-700/50 rounded-xl transition-all duration-200 flex items-center justify-center space-x-3 text-neutral-100 backdrop-blur-sm shadow-lg"
+                        className="cursor-pointer flex-1 px-6 py-4 bg-neutral-800/50 hover:bg-neutral-700/50 disabled:bg-neutral-800/30 disabled:opacity-50 disabled:cursor-not-allowed border border-neutral-700/50 rounded-xl transition-all duration-200 flex items-center justify-center space-x-3 text-neutral-100 backdrop-blur-sm shadow-lg"
                     >
                         <Download size={20} />
                         <span className="font-medium">Export Survey JSON</span>
@@ -278,7 +278,7 @@ const SurveyBuilder: React.FC = () => {
                     <button
                         onClick={handleSubmit}
                         disabled={isSubmitDisabled}
-                        className="flex-1 px-6 py-4 bg-white text-black hover:bg-neutral-100 disabled:bg-neutral-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all duration-200 flex items-center justify-center space-x-3 shadow-lg font-medium"
+                        className="cursor-pointer flex-1 px-6 py-4 bg-white text-black hover:bg-neutral-100 disabled:bg-neutral-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all duration-200 flex items-center justify-center space-x-3 shadow-lg font-medium"
                     >
                         <Send size={20} />
                         <span>Submit Survey</span>

@@ -6,20 +6,48 @@ import Link from "next/link"
 import { SimulationInput, SimulationOutput, Persona, Survey } from "~~/types/simulation"
 import PersonaCard from '~~/components/Persona/PersonaCard';
 
+// Skeleton Components
+const SkeletonBar = ({ width = "100%" }: { width?: string }) => (
+    <div
+        className="bg-neutral-700 rounded-full h-2 animate-pulse"
+        style={{ width }}
+    />
+);
+
+const SkeletonText = ({ width = "100%", height = "h-4" }: { width?: string, height?: string }) => (
+    <div
+        className={`bg-neutral-700 rounded ${height} animate-pulse`}
+        style={{ width }}
+    />
+);
+
+const QuestionSkeleton = () => (
+    <div className="space-y-4">
+        <SkeletonText width="70%" height="h-6" />
+        <div className="space-y-3">
+            {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="space-y-2">
+                    <div className="flex justify-between">
+                        <SkeletonText width="40%" />
+                        <SkeletonText width="20%" />
+                    </div>
+                    <SkeletonBar />
+                </div>
+            ))}
+        </div>
+    </div>
+);
+
 // Survey processing function
 function processSurveyResults(surveyJSON: Survey, backendResults: SimulationOutput): Survey {
-    // Create a deep copy of the survey to avoid mutating the original
+    // deep copy of the survey to avoid mutating the original
     const processedSurvey: Survey = JSON.parse(JSON.stringify(surveyJSON));
 
-    // Get total number of responses
     const totalResponses = backendResults.results.length;
 
-    // Initialize counters for each option
     const optionCounts: Record<string, number> = {};
 
-    // Process each question
     processedSurvey.questions.forEach((question) => {
-        // Initialize counters for this question's options
         question.options.forEach((option) => {
             optionCounts[option.id] = 0;
         });
@@ -51,27 +79,14 @@ function processSurveyResults(surveyJSON: Survey, backendResults: SimulationOutp
 const Result: React.FC = () => {
     const [results, setResults] = useState<SimulationOutput | null>(null);
     const [allPersonas, setAllPersonas] = useState<Persona[]>([])
-    const [parsedSurvey, setParsedSurvey] = useState<Survey>(
-
-    )
+    const [parsedSurvey, setParsedSurvey] = useState<Survey | null>(null)
     const [loading, setLoading] = useState(false)
+    const [initialLoading, setInitialLoading] = useState(true)
 
     // Process survey data with results
     const processedSurveyData = useMemo(() => {
         if (!parsedSurvey || !results) {
-            return {
-                title: parsedSurvey?.title || "Sample Survey",
-                description: parsedSurvey?.description || "Test survey",
-                responses: 0,
-                questions: parsedSurvey?.questions?.map(q => ({
-                    ...q,
-                    options: q.options.map(opt => ({
-                        ...opt,
-                        percentage: 0,
-                        responses: 0
-                    }))
-                })) || []
-            };
+            return null;
         }
 
         const processed = processSurveyResults(parsedSurvey, results);
@@ -89,41 +104,6 @@ const Result: React.FC = () => {
             }))
         };
     }, [parsedSurvey, results]);
-
-    // Keep your existing hardcoded data as fallback
-    const surveyData = {
-        title: "Product Feedback Survey",
-        description: "We'd love to hear your thoughts on our new product features",
-        responses: 4,
-        questions: [
-            {
-                id: "1",
-                text: "How satisfied are you with our product?",
-                options: [
-                    { text: "Very Satisfied", percentage: 45, responses: 68 },
-                    { text: "Satisfied", percentage: 30, responses: 45 },
-                    { text: "Neutral", percentage: 15, responses: 23 },
-                    { text: "Dissatisfied", percentage: 10, responses: 14 },
-                ],
-            },
-            {
-                id: "2",
-                text: "Which feature do you use most?",
-                options: [
-                    { text: "Dashboard", percentage: 35, responses: 53 },
-                    { text: "Analytics", percentage: 25, responses: 38 },
-                    { text: "Reports", percentage: 25, responses: 37 },
-                    { text: "Settings", percentage: 15, responses: 22 },
-                ],
-            },
-        ],
-        participants: [
-            { id: "1", name: "John D.", status: "completed" },
-            { id: "2", name: "Sarah M.", status: "completed" },
-            { id: "3", name: "Mike R.", status: "pending" },
-            { id: "4", name: "Emma L.", status: "completed" },
-        ],
-    }
 
     const { data: allPersona } = useScaffoldReadContract({
         contractName: "Persona",
@@ -189,7 +169,7 @@ const Result: React.FC = () => {
         if (storedState) {
             try {
                 const parsedSurveyData = JSON.parse(storedState);
-                console.log("patsed in useeffect ", parsedSurveyData)
+                console.log("parsed in useeffect ", parsedSurveyData)
                 setParsedSurvey(parsedSurveyData);
                 sessionStorage.removeItem('surveyJSON');
             } catch (error) {
@@ -199,6 +179,7 @@ const Result: React.FC = () => {
         else {
             console.log("no storedstate")
         }
+        setInitialLoading(false);
     }, []);
 
     useEffect(() => {
@@ -212,11 +193,39 @@ const Result: React.FC = () => {
         }
     }, [parsedSurvey, allPersonas, handleSimulate, results]);
 
-    // Determine which data to display
-    const displayData = results ? processedSurveyData : surveyData;
-
     console.log("results ", results)
     console.log("processed survey data ", processedSurveyData)
+
+    // Show loading state while initial data is being loaded
+    if (initialLoading) {
+        return (
+            <div className="min-h-screen bg-neutral-900 text-white">
+                <div className="container mx-auto px-4 py-8">
+                    <div className="flex justify-between items-center mb-10">
+                        <div>
+                            <h1 className="text-3xl font-bold">Survey Results</h1>
+                            <p className="text-neutral-400">View responses and analytics</p>
+                        </div>
+                        <Link href="/">
+                            <button className="px-4 py-2 border border-neutral-600 rounded-xl hover:bg-neutral-800 transition-colors">
+                                Back to Home
+                            </button>
+                        </Link>
+                    </div>
+                    <div className="max-w-6xl mx-auto space-y-8">
+                        {/* Loading skeleton */}
+                        <div className="bg-neutral-800 rounded-2xl p-6 border border-neutral-700">
+                            <SkeletonText width="60%" height="h-6" />
+                            <div className="mt-2 mb-4">
+                                <SkeletonText width="80%" />
+                            </div>
+                            <SkeletonText width="30%" height="h-8" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-neutral-900 text-white">
@@ -236,11 +245,24 @@ const Result: React.FC = () => {
                 <div className="max-w-6xl mx-auto space-y-8">
                     {/* Survey Info */}
                     <div className="bg-neutral-800 rounded-2xl p-6 border border-neutral-700">
-                        <h2 className="text-xl font-semibold mb-2">{displayData.title}</h2>
-                        <p className="text-neutral-400 mb-4">{displayData.description}</p>
-                        <span className="inline-block px-3 py-1 bg-neutral-700 rounded-full text-sm text-neutral-300">
-                            {displayData.responses} responses
-                        </span>
+                        {parsedSurvey ? (
+                            <>
+                                <h2 className="text-xl font-semibold mb-2">{parsedSurvey.title}</h2>
+                                <p className="text-neutral-400 mb-4">{parsedSurvey.description}</p>
+                                <span className="inline-block px-3 py-1 bg-neutral-700 rounded-full text-sm text-neutral-300">
+                                    {processedSurveyData?.responses || 0} responses
+                                </span>
+                            </>
+                        ) : (
+                            <>
+                                <SkeletonText width="60%" height="h-6" />
+                                <div className="mt-2 mb-4">
+                                    <SkeletonText width="80%" />
+                                </div>
+                                <SkeletonText width="30%" height="h-8" />
+                            </>
+                        )}
+
                         {loading && (
                             <div className="mt-4 flex items-center gap-2">
                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -253,40 +275,69 @@ const Result: React.FC = () => {
                     <div className="bg-neutral-800 rounded-2xl p-6 border border-neutral-700">
                         <h2 className="text-xl font-semibold mb-6">Responses</h2>
                         <div className="space-y-8">
-                            {displayData.questions.map((question, index) => (
-                                <div key={question.id || index}>
-                                    <h3 className="font-semibold text-lg mb-4">
-                                        Question {index + 1}: {question.text}
-                                    </h3>
-                                    <div className="space-y-3">
-                                        {question.options.map((option, optionIndex) => (
-                                            <div key={optionIndex} className="space-y-2">
-                                                <div className="flex justify-between text-sm text-neutral-300">
-                                                    <span>{option.text}</span>
-                                                    <span className="text-neutral-500">
-                                                        {option.percentage}% ({option.responses} responses)
-                                                    </span>
+                            {processedSurveyData ? (
+                                processedSurveyData.questions.map((question, index) => (
+                                    <div key={question.id || index}>
+                                        <h3 className="font-semibold text-lg mb-4">
+                                            Question {index + 1}: {question.text}
+                                        </h3>
+                                        <div className="space-y-3">
+                                            {question.options.map((option, optionIndex) => (
+                                                <div key={optionIndex} className="space-y-2">
+                                                    <div className="flex justify-between text-sm text-neutral-300">
+                                                        <span>{option.text}</span>
+                                                        <span className="text-neutral-500">
+                                                            {option.percentage}% ({option.responses} responses)
+                                                        </span>
+                                                    </div>
+                                                    <div className="w-full bg-neutral-700 rounded-full h-2">
+                                                        <div
+                                                            className="bg-white h-2 rounded-full transition-all duration-300"
+                                                            style={{ width: `${option.percentage}%` }}
+                                                        ></div>
+                                                    </div>
                                                 </div>
-                                                <div className="w-full bg-neutral-700 rounded-full h-2">
-                                                    <div
-                                                        className="bg-white h-2 rounded-full transition-all duration-300"
-                                                        style={{ width: `${option.percentage}%` }}
-                                                    ></div>
-                                                </div>
-                                            </div>
-                                        ))}
+                                            ))}
+                                        </div>
                                     </div>
+                                ))
+                            ) : loading ? (
+                                <>
+                                    <QuestionSkeleton />
+                                    <QuestionSkeleton />
+                                </>
+                            ) : (
+                                // Show message when no data
+                                <div className="text-center py-8">
+                                    <p className="text-neutral-400">No survey data available</p>
                                 </div>
-                            ))}
+                            )}
                         </div>
                     </div>
 
                     {/* Participants */}
-                    <div className="bg-neutral-800 rounded-2xl p-6 border border-neutral-700">
-                        <h2 className="text-xl font-semibold mb-6">Participants</h2>
-                        {allPersonas?.map((persona: Persona) => (
-                            <PersonaCard key={persona.address} data={persona} />
-                        ))}
+                    <div className='bg-neutral-800 rounded-2xl p-6 border border-neutral-700' >
+                        <h2 className="text-xl font-semibold mb-2">Participants</h2>
+
+                        {parsedSurvey && <div className="grid grid-cols-2 gap-2">
+                            {allPersonas.length > 0 ? (
+                                allPersonas.map((persona: Persona) => (
+                                    <PersonaCard key={persona.address} data={persona} />
+                                ))
+                            ) : (
+                                <div className="space-y-4">
+                                    {[1, 2, 3].map((i) => (
+                                        <div key={i} className="bg-neutral-700 rounded-lg p-4 animate-pulse">
+                                            <SkeletonText width="40%" height="h-5" />
+                                            <div className="mt-2">
+                                                <SkeletonText width="60%" />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        }
                     </div>
                 </div>
             </div>
