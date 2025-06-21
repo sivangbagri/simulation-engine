@@ -1,6 +1,6 @@
 "use client"
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
-import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
+import { useScaffoldReadContract,useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import Link from "next/link"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~~/components/ui/tabs"
 import { SimulationInput, SimulationOutput, Persona, Survey } from "~~/types/simulation"
@@ -84,6 +84,8 @@ const Result: React.FC = () => {
     const [loading, setLoading] = useState(false)
     const [initialLoading, setInitialLoading] = useState(true)
     const [niche, setNiche] = useState("")
+    const [rewardsProcessed, setRewardsProcessed] = useState(false) // Track if rewards have been processed
+    const { writeContractAsync: writeYourContractAsync, isPending } = useScaffoldWriteContract({ contractName: "Persona" });
 
     // Process survey data with results
     const processedSurveyData = useMemo(() => {
@@ -112,6 +114,39 @@ const Result: React.FC = () => {
         functionName: "getAllPersonas"
     })
 
+    const reward = async (personas: Persona[]) => {
+        try {
+            console.log("Processing rewards for personas:", personas);
+            const response = await fetch('/api/reward', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    participants: personas.map(p => ({
+                        address: p.address,
+                        name: p.basic_info.username || 'Unknown',
+                        niche: p.niche
+                    })),
+                    rewardAmount: 10
+                })
+            });
+            const result = await response.json();
+            if (response.ok && result.success) {
+                console.log("✅ Rewards processed successfully:", result);
+                
+                setRewardsProcessed(true);
+            } else {
+                console.error("❌ Reward processing failed:", result);
+                 
+            }
+        
+        } catch (error) {
+            console.error("❌ Error rewarding personas:", error);
+        }
+    };
+    
+
     useEffect(() => {
         console.log("from contract", (allPersona?.[1]));
 
@@ -119,7 +154,8 @@ const Result: React.FC = () => {
             try {
                 const parsedPersonas = allPersona[1].map((p: string) => (JSON.parse(p)));
                 console.log("parsedPersonas ", parsedPersonas)
-                setAllPersonas(parsedPersonas.filter((persona: Persona) => persona.niche === niche));
+                const filteredPersonas = parsedPersonas.filter((persona: Persona) => persona.niche === niche);
+                setAllPersonas(filteredPersonas);
             } catch (error) {
                 console.error('Failed to parse personas from contract:', error);
             }
@@ -127,7 +163,7 @@ const Result: React.FC = () => {
         else {
             console.log("not found from contract")
         }
-    }, [allPersona]);
+     }, [allPersona, niche]);
 
     const simulateSurvey = useCallback(async (data: SimulationInput): Promise<SimulationOutput> => {
         const response = await fetch('/api/simulate', {
@@ -171,6 +207,7 @@ const Result: React.FC = () => {
         if (storedState) {
             try {
                 const parsedSurveyData = JSON.parse(storedState);
+                console.log("niche= ", parsedSurveyData.niche)
                 setNiche(parsedSurveyData.niche.toLowerCase())
                 console.log("parsed in useeffect ", parsedSurveyData)
                 setParsedSurvey(parsedSurveyData);
@@ -195,6 +232,14 @@ const Result: React.FC = () => {
             console.log("some issue")
         }
     }, [parsedSurvey, allPersonas, handleSimulate, results]);
+
+    // Process rewards after simulation is complete and we have personas
+    useEffect(() => {
+        if (results && allPersonas.length > 0 && !rewardsProcessed) {
+            console.log("Processing rewards for", allPersonas.length, "personas");
+            reward(allPersonas);
+        }
+    }, [results, allPersonas, rewardsProcessed]);
 
     console.log("results ", results)
     console.log("processed survey data ", processedSurveyData)

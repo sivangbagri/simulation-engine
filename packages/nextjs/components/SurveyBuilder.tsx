@@ -34,7 +34,7 @@ const SurveyBuilder: React.FC = () => {
     const [survey, setSurvey] = useState<Survey>({
         title: '',
         description: '',
-        niche: 'General',
+        niche: '',
         questions: []
     });
 
@@ -195,7 +195,7 @@ const SurveyBuilder: React.FC = () => {
                                 onChange={handleNicheChange}
                                 className="w-full px-4 py-3 bg-neutral-800/50 border border-neutral-700/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:border-neutral-500 transition-all duration-200 text-neutral-100"
                             >
-                                <option value="General">General</option>
+                                <option value="Generic">Generic</option>
                                 <option value="Gaming">Gaming</option>
                             </select>
                         </div>

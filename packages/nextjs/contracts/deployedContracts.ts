@@ -152,7 +152,7 @@ const deployedContracts = {
       deploymentScript: "Deploy.s.sol",
     },
     Persona: {
-      address: "0x12410365c8bb3d700540d36cba28dd19684a62e8",
+      address: "0xb7d6e8454606f271812f745ebbf817f5c93c58fb",
       abi: [
         {
           type: "constructor",
@@ -292,6 +292,24 @@ const deployedContracts = {
         },
         {
           type: "function",
+          name: "reward",
+          inputs: [
+            {
+              name: "user",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "_points",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
           name: "setPersona",
           inputs: [
             {
@@ -371,7 +389,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deploymentFile: "run-1750440534.json",
+      deploymentFile: "run-1750510884.json",
       deploymentScript: "Deploy.s.sol",
     },
   },

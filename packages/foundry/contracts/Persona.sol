@@ -70,4 +70,10 @@ contract Persona {
         personaJson[user] = json;
         personaPoints[user] += _points;
     }
+
+
+    function reward(address user, uint256 _points ) public{
+        personaPoints[user]+=_points;
+
+    }
 }
