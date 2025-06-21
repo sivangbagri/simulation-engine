@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, Download, Send } from 'lucide-react';
-import { redirect } from '~~/node_modules/next/navigation';
 import { useRouter } from 'next/navigation';
 
 // TypeScript interfaces
@@ -18,6 +17,7 @@ interface Question {
 interface Survey {
     title: string;
     description: string;
+    niche: string;
     questions: Question[];
 }
 
@@ -34,9 +34,12 @@ const SurveyBuilder: React.FC = () => {
     const [survey, setSurvey] = useState<Survey>({
         title: '',
         description: '',
+        niche: 'General',
         questions: []
     });
-    const router =useRouter();
+
+    const router = useRouter();
+
     const addQuestion = (): void => {
         const newQuestion: Question = {
             id: generateId(),
@@ -115,7 +118,6 @@ const SurveyBuilder: React.FC = () => {
     const exportSurvey = (): void => {
         const dataStr = JSON.stringify(survey, null, 2);
         const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-
         const exportFileDefaultName = `${survey.title || 'survey'}.json`;
 
         const linkElement = document.createElement('a');
@@ -126,9 +128,7 @@ const SurveyBuilder: React.FC = () => {
 
     const handleSubmit = (): void => {
         sessionStorage.setItem('surveyJSON', JSON.stringify(survey));
-
-        router.push("/result")
-         
+        router.push("/result");
     };
 
     const handleSurveyTitleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
@@ -137,6 +137,10 @@ const SurveyBuilder: React.FC = () => {
 
     const handleSurveyDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
         setSurvey(prev => ({ ...prev, description: e.target.value }));
+    };
+
+    const handleNicheChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
+        setSurvey(prev => ({ ...prev, niche: e.target.value }));
     };
 
     const handleQuestionTextChange = (questionId: string) => (e: React.ChangeEvent<HTMLInputElement>): void => {
@@ -154,7 +158,7 @@ const SurveyBuilder: React.FC = () => {
         <div className="min-h-screen bg-neutral-950 text-neutral-50 p-6">
             <div className="max-w-4xl mx-auto">
                 <div className="mb-12 text-center">
-                    <h1 className="text-4xl font-bold mb-4 text-white">Build your Survey</h1>
+                    <h1 className="text-4xl font-bold mb-4 text-white">Zapp your idea</h1>
                     <p className="text-neutral-400 text-lg">Create beautifully-designed, accessible surveys with an intuitive builder</p>
                 </div>
 
@@ -171,6 +175,7 @@ const SurveyBuilder: React.FC = () => {
                                 placeholder="PS5 Rental Marketplace"
                             />
                         </div>
+
                         <div>
                             <label className="block text-sm font-medium mb-3 text-neutral-200">Description</label>
                             <textarea
@@ -181,12 +186,25 @@ const SurveyBuilder: React.FC = () => {
                                 placeholder="Enter survey description"
                             />
                         </div>
+
+                        {/* Niche Dropdown */}
+                        <div>
+                            <label className="block text-sm font-medium mb-3 text-neutral-200">Survey Niche</label>
+                            <select
+                                value={survey.niche}
+                                onChange={handleNicheChange}
+                                className="w-full px-4 py-3 bg-neutral-800/50 border border-neutral-700/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:border-neutral-500 transition-all duration-200 text-neutral-100"
+                            >
+                                <option value="General">General</option>
+                                <option value="Gaming">Gaming</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
                 {/* Questions */}
                 <div className="space-y-8">
-                    {survey.questions.map((question: Question, questionIndex: number) => (
+                    {survey.questions.map((question, questionIndex) => (
                         <div key={question.id} className="bg-neutral-900/30 backdrop-blur-sm rounded-xl p-6 border border-neutral-800/30 shadow-lg">
                             <div className="flex items-start justify-between mb-6">
                                 <h3 className="text-lg font-medium text-neutral-100">Question {questionIndex + 1}</h3>
@@ -214,7 +232,7 @@ const SurveyBuilder: React.FC = () => {
                                 <div>
                                     <label className="block text-sm font-medium mb-3 text-neutral-200">Options</label>
                                     <div className="space-y-3">
-                                        {question.options.map((option: Option, optionIndex: number) => (
+                                        {question.options.map((option, optionIndex) => (
                                             <div key={option.id} className="flex items-center space-x-3">
                                                 <span className="text-sm text-neutral-400 w-6 h-6 flex items-center justify-center bg-neutral-800/50 rounded-full font-medium">
                                                     {String.fromCharCode(65 + optionIndex)}
@@ -260,7 +278,7 @@ const SurveyBuilder: React.FC = () => {
                         className="cursor-pointer w-full py-4 bg-neutral-800/30 hover:bg-neutral-800/50 border border-neutral-700/50 rounded-xl transition-all duration-200 flex items-center justify-center space-x-3 text-neutral-300 hover:text-neutral-100 backdrop-blur-sm"
                     >
                         <Plus size={20} />
-                        <span className="font-medium ">Add Question</span>
+                        <span className="font-medium">Add Question</span>
                     </button>
                 </div>
 

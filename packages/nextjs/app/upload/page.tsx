@@ -162,7 +162,7 @@ const TwitterArchiveUploader: React.FC = () => {
                 await writeYourContractAsync(
                     {
                         functionName: "setPersona",
-                        args: [JSON.stringify({ address: connectedAddress, niche: "generic", ...result.persona })],
+                        args: [JSON.stringify({ address: connectedAddress, niche: "generic", ...result.persona }), 5],
 
                     },
                     {

@@ -6,24 +6,36 @@ contract Persona {
     mapping(address => string) public personaJson;
     address[] public userAddresses; // Track all addresses that have set personas
     mapping(address => bool) public hasPersona; // Track which addresses have personas
-
+    mapping(address => uint256) public personaPoints;
     event PersonaSet(address indexed user, string json);
 
     constructor(address _owner) {
         owner = _owner;
     }
 
-    function setPersona(string memory json) public {
+    function setPersona(string memory json, uint256 _points) public {
         if (!hasPersona[msg.sender]) {
             userAddresses.push(msg.sender);
             hasPersona[msg.sender] = true;
         }
         personaJson[msg.sender] = json;
+        personaPoints[msg.sender] += _points;
+
         emit PersonaSet(msg.sender, json);
     }
 
     function getPersona(address user) public view returns (string memory) {
         return personaJson[user];
+    }
+
+    function getLeaderboard() public view returns (address[] memory addresses, uint256[] memory points) {
+        uint256 count = userAddresses.length;
+        points = new uint256[](count);
+        for(uint256 i=0; i<count; i++){
+            points[i]=personaPoints[userAddresses[i]];
+
+        }
+        return (userAddresses, points);
     }
 
     // Get all personas
@@ -45,12 +57,17 @@ contract Persona {
     }
 
     // Admin function to set persona for any address (optional)
-    function setPersonaFor(address user, string memory json) public {
+    function setPersonaFor(
+        address user,
+        string memory json,
+        uint256 _points
+    ) public {
         require(msg.sender == owner, "Only owner can set persona for others");
         if (!hasPersona[user]) {
             userAddresses.push(user);
             hasPersona[user] = true;
         }
         personaJson[user] = json;
+        personaPoints[user] += _points;
     }
 }

@@ -2,9 +2,10 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 import Link from "next/link"
-
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "~~/components/ui/tabs"
 import { SimulationInput, SimulationOutput, Persona, Survey } from "~~/types/simulation"
 import PersonaCard from '~~/components/Persona/PersonaCard';
+import Incentivize from '~~/components/Incentivize';
 
 // Skeleton Components
 const SkeletonBar = ({ width = "100%" }: { width?: string }) => (
@@ -82,6 +83,7 @@ const Result: React.FC = () => {
     const [parsedSurvey, setParsedSurvey] = useState<Survey | null>(null)
     const [loading, setLoading] = useState(false)
     const [initialLoading, setInitialLoading] = useState(true)
+    const [niche, setNiche] = useState("")
 
     // Process survey data with results
     const processedSurveyData = useMemo(() => {
@@ -117,7 +119,7 @@ const Result: React.FC = () => {
             try {
                 const parsedPersonas = allPersona[1].map((p: string) => (JSON.parse(p)));
                 console.log("parsedPersonas ", parsedPersonas)
-                setAllPersonas(parsedPersonas);
+                setAllPersonas(parsedPersonas.filter((persona: Persona) => persona.niche === niche));
             } catch (error) {
                 console.error('Failed to parse personas from contract:', error);
             }
@@ -169,6 +171,7 @@ const Result: React.FC = () => {
         if (storedState) {
             try {
                 const parsedSurveyData = JSON.parse(storedState);
+                setNiche(parsedSurveyData.niche.toLowerCase())
                 console.log("parsed in useeffect ", parsedSurveyData)
                 setParsedSurvey(parsedSurveyData);
                 sessionStorage.removeItem('surveyJSON');
@@ -319,29 +322,76 @@ const Result: React.FC = () => {
                     <div className='bg-neutral-800 rounded-2xl p-6 border border-neutral-700' >
                         <h2 className="text-xl font-semibold mb-2">Participants</h2>
 
-                        {parsedSurvey && <div className="grid grid-cols-2 gap-2">
-                            {allPersonas.length > 0 ? (
-                                allPersonas.map((persona: Persona) => (
-                                    <PersonaCard key={persona.address} data={persona} />
-                                ))
-                            ) : (
-                                <div className="space-y-4">
-                                    {[1, 2, 3].map((i) => (
-                                        <div key={i} className="bg-neutral-700 rounded-lg p-4 animate-pulse">
-                                            <SkeletonText width="40%" height="h-5" />
-                                            <div className="mt-2">
-                                                <SkeletonText width="60%" />
+                        {parsedSurvey && (
+                            <Tabs defaultValue="generic" className="w-full mt-5">
+                                <TabsList className="grid w-full grid-cols-2 bg-neutral-700 p-1 rounded-lg mb-6">
+                                    <TabsTrigger
+                                        value="generic"
+                                        className="data-[state=active]:bg-neutral-600 data-[state=active]:text-white text-neutral-300 rounded-md transition-all"
+                                    >
+                                        Generic  ({allPersonas.filter((persona) => (persona.niche === "generic")).length})
+                                    </TabsTrigger>
+                                    <TabsTrigger
+                                        value="gaming"
+                                        className="data-[state=active]:bg-neutral-600 data-[state=active]:text-white text-neutral-300 rounded-md transition-all"
+                                    >
+                                        Gaming ({allPersonas.filter((persona) => (persona.niche === "gaming")).length})
+                                    </TabsTrigger>
+                                </TabsList>
+
+                                <TabsContent value="generic" className="mt-0">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {allPersonas.length > 0 ? (
+                                            allPersonas.filter((persona) => (persona.niche === "generic")).map((persona: Persona) => (
+                                                <PersonaCard key={persona.address} data={persona} />
+                                            ))
+                                        ) : (
+                                            <div className="col-span-full text-center py-8">
+                                                <p className="text-neutral-400">No generic participants yet</p>
                                             </div>
+                                        )}
+                                    </div>
+                                    <div className='flex justify-center my-5 '> <Incentivize niche="generic" /></div>
+
+
+                                </TabsContent>
+
+                                <TabsContent value="gaming" className="mt-0">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {allPersonas.length > 0 ? (
+                                            allPersonas.filter((persona) => (persona.niche === "gaming")).map((persona: Persona) => (
+                                                <PersonaCard key={persona.address} data={persona} />
+                                            ))
+                                        ) : (
+                                            <div className="col-span-full text-center py-8">
+                                                <p className="text-neutral-400">No gaming participants yet</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className='flex justify-center my-5 '> <Incentivize niche="gaming" /></div>
+
+                                </TabsContent>
+                            </Tabs>
+                        )}
+
+                        {!parsedSurvey && (
+                            <div className="space-y-4">
+                                {[1, 2, 3].map((i) => (
+                                    <div key={i} className="bg-neutral-700 rounded-lg p-4 animate-pulse">
+                                        <SkeletonText width="40%" height="h-5" />
+                                        <div className="mt-2">
+                                            <SkeletonText width="60%" />
                                         </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                        }
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
+
         </div>
+
     )
 }
 

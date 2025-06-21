@@ -152,7 +152,7 @@ const deployedContracts = {
       deploymentScript: "Deploy.s.sol",
     },
     Persona: {
-      address: "0x999201b4f3f88384764f9c944fcc69410661350c",
+      address: "0x12410365c8bb3d700540d36cba28dd19684a62e8",
       abi: [
         {
           type: "constructor",
@@ -179,6 +179,24 @@ const deployedContracts = {
               name: "personas",
               type: "string[]",
               internalType: "string[]",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
+          name: "getLeaderboard",
+          inputs: [],
+          outputs: [
+            {
+              name: "addresses",
+              type: "address[]",
+              internalType: "address[]",
+            },
+            {
+              name: "points",
+              type: "uint256[]",
+              internalType: "uint256[]",
             },
           ],
           stateMutability: "view",
@@ -255,12 +273,36 @@ const deployedContracts = {
         },
         {
           type: "function",
+          name: "personaPoints",
+          inputs: [
+            {
+              name: "",
+              type: "address",
+              internalType: "address",
+            },
+          ],
+          outputs: [
+            {
+              name: "",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          stateMutability: "view",
+        },
+        {
+          type: "function",
           name: "setPersona",
           inputs: [
             {
               name: "json",
               type: "string",
               internalType: "string",
+            },
+            {
+              name: "_points",
+              type: "uint256",
+              internalType: "uint256",
             },
           ],
           outputs: [],
@@ -279,6 +321,11 @@ const deployedContracts = {
               name: "json",
               type: "string",
               internalType: "string",
+            },
+            {
+              name: "_points",
+              type: "uint256",
+              internalType: "uint256",
             },
           ],
           outputs: [],
@@ -324,7 +371,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deploymentFile: "run-1749660702.json",
+      deploymentFile: "run-1750440534.json",
       deploymentScript: "Deploy.s.sol",
     },
   },
