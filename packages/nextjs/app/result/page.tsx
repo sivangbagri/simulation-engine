@@ -8,14 +8,14 @@ import PersonaCard from '~~/components/Persona/PersonaCard';
 import Incentivize from '~~/components/Incentivize';
 
 // Skeleton Components
-const SkeletonBar = ({ width = "100%" }: { width?: string }) => (
+export const SkeletonBar = ({ width = "100%" }: { width?: string }) => (
     <div
         className="bg-neutral-700 rounded-full h-2 animate-pulse"
         style={{ width }}
     />
 );
 
-const SkeletonText = ({ width = "100%", height = "h-4" }: { width?: string, height?: string }) => (
+export const SkeletonText = ({ width = "100%", height = "h-4" }: { width?: string, height?: string }) => (
     <div
         className={`bg-neutral-700 rounded ${height} animate-pulse`}
         style={{ width }}
@@ -368,13 +368,13 @@ const Result: React.FC = () => {
                         <h2 className="text-xl font-semibold mb-2">Participants</h2>
 
                         {parsedSurvey && (
-                            <Tabs defaultValue="generic" className="w-full mt-5">
+                            <Tabs defaultValue="general" className="w-full mt-5">
                                 <TabsList className="grid w-full grid-cols-2 bg-neutral-700 p-1 rounded-lg mb-6">
                                     <TabsTrigger
-                                        value="generic"
+                                        value="general"
                                         className="data-[state=active]:bg-neutral-600 data-[state=active]:text-white text-neutral-300 rounded-md transition-all"
                                     >
-                                        Generic  ({allPersonas.filter((persona) => (persona.niche === "generic")).length})
+                                        General  ({allPersonas.filter((persona) => (persona.niche === "general")).length})
                                     </TabsTrigger>
                                     <TabsTrigger
                                         value="gaming"
@@ -384,19 +384,19 @@ const Result: React.FC = () => {
                                     </TabsTrigger>
                                 </TabsList>
 
-                                <TabsContent value="generic" className="mt-0">
+                                <TabsContent value="general" className="mt-0">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {allPersonas.length > 0 ? (
-                                            allPersonas.filter((persona) => (persona.niche === "generic")).map((persona: Persona) => (
+                                            allPersonas.filter((persona) => (persona.niche === "general")).map((persona: Persona) => (
                                                 <PersonaCard key={persona.address} data={persona} />
                                             ))
                                         ) : (
                                             <div className="col-span-full text-center py-8">
-                                                <p className="text-neutral-400">No generic participants yet</p>
+                                                <p className="text-neutral-400">No general participants yet</p>
                                             </div>
                                         )}
                                     </div>
-                                    <div className='flex justify-center my-5 '> <Incentivize niche="generic" /></div>
+                                    {/* <div className='flex justify-center my-5 '> <Incentivize niche="general" /></div> */}
 
 
                                 </TabsContent>
@@ -413,7 +413,7 @@ const Result: React.FC = () => {
                                             </div>
                                         )}
                                     </div>
-                                    <div className='flex justify-center my-5 '> <Incentivize niche="gaming" /></div>
+                                    {/* <div className='flex justify-center my-5 '> <Incentivize niche="gaming" /></div> */}
 
                                 </TabsContent>
                             </Tabs>

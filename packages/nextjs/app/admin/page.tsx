@@ -15,109 +15,111 @@ const Admin: React.FC = () => {
 
     const PersonaJson = {
         "basic_info": {
-            "username": "AdarshPal",
-            "screen_name": "adarsh_bgmi",
-            "bio": "Mobile gamer | BGMI grinder | Loves competition 🎮",
-            "location": "",
-            "website": "",
-            "followers_count": 0,
-            "following_count": 0,
-            "account_creation": "2023-01-10T10:15:00.000Z",
-            "activity_period": "Jan 2023 to May 2025",
-            "tweet_count": 8290
+          "username": "AshutoshSharma",
+          "screen_name": "ashu_bgmi",
+          "bio": "Hardcore mobile gamer | BGMI & CoD fanatic | Competing, learning, evolving 🎮📱",
+          "location": "",
+          "website": "",
+          "followers_count": 0,
+          "following_count": 0,
+          "account_creation": "2024-07-14T01:01:32.000Z",
+          "activity_period": "Jul 2024 to May 2025",
+          "tweet_count": 5635
         },
         "interests": [
-            "Mobile Gaming",
-            "Esports",
-            "Streaming",
-            "Competitive Gaming",
-            "Gaming Communities"
+          "Mobile Gaming",
+          "Battle Royale",
+          "Esports",
+          "Streaming Platforms",
+          "Educational Gaming"
         ],
         "personality_traits": [
-            "Competitive",
-            "Focused",
-            "Social",
-            "Curious",
-            "Adaptive"
+          "Competitive",
+          "Ambitious",
+          "Disciplined",
+          "Purpose-driven",
+          "Resilient"
         ],
         "communication_style": {
-            "tone": "Energetic",
-            "formality": "Casual",
-            "engagement": [
-                "Conversational",
-                "Reaction-based"
-            ],
-            "emoji_usage": "Frequent"
+          "tone": "Direct",
+          "formality": "Semi-formal",
+          "engagement": [
+            "Game updates",
+            "Community insights"
+          ],
+          "emoji_usage": "Moderate"
         },
         "frequent_topics": [
-            "bgmi",
-            "tournament",
-            "team",
-            "gameplay",
-            "stream",
-            "device",
-            "rank",
-            "clutch",
-            "opponent",
-            "grind"
+          "bgmi",
+          "valorant",
+          "callofduty",
+          "match",
+          "squad",
+          "push",
+          "killstreak",
+          "grind",
+          "ranked",
+          "tournament"
         ],
         "top_hashtags": [
-            "BGMI",
-            "MobileGaming",
-            "Esports",
-            "GamingCommunity",
-            "ClutchMoment",
-            "TournamentTime",
-            "SquadGoals",
-            "StreamingLive",
-            "GGWP",
-            "GrindNeverStops"
+          "BGMI",
+          "HardcoreGamer",
+          "MobileEsports",
+          "CODMobile",
+          "GrindSeason",
+          "PushToConqueror",
+          "ClutchPlay",
+          "OnlineTournaments",
+          "GameAndLearn",
+          "EduGaming"
         ],
         "activity_patterns": {
-            "most_active_hours": [
-                21,
-                17,
-                23
-            ],
-            "most_active_days": [
-                "Friday",
-                "Saturday",
-                "Sunday"
-            ],
-            "posting_frequency": "Active (daily, especially evenings)"
+          "most_active_hours": [
+            18,
+            21,
+            22
+          ],
+          "most_active_days": [
+            "Friday",
+            "Saturday",
+            "Sunday"
+          ],
+          "posting_frequency": "High (multiple times a day)"
         },
         "social_interactions": {
-            "most_mentioned_users": [
-                "zenet_official",
-                "bgmi_tournaments",
-                "valorantupdates",
-                "freefirecommunity",
-                "codmobile_esports"
-            ],
-            "reply_percentage": 64.3,
-            "retweet_percentage": 9.1,
-            "interaction_style": "Community-driven & competitive"
+          "most_mentioned_users": [
+            "bgmi_official",
+            "codmobile_esports",
+            "ffupdates",
+            "valorantzone",
+            "edugamers"
+          ],
+          "reply_percentage": 67.8,
+          "retweet_percentage": 5.4,
+          "interaction_style": "Focused on performance & learning"
         },
         "likes_analysis": {
-            "top_liked_hashtags": [
-                "BGMI",
-                "Esports",
-                "MobileGaming"
-            ],
-            "liked_topics": [
-                "clutch",
-                "match",
-                "team",
-                "game",
-                "op",
-                "grind",
-                "tournament",
-                "rankpush",
-                "streaming",
-                "community"
-            ]
+          "top_liked_hashtags": [
+            "BGMI",
+            "MobileEsports",
+            "GameAndLearn"
+          ],
+          "liked_topics": [
+            "kill",
+            "squad",
+            "match",
+            "rank",
+            "skills",
+            "xp",
+            "tournament",
+            "education",
+            "streaming",
+            "learning",
+            "leaderboard"
+          ]
         }
-    }
+      }
+      
     const { address: connectedAddress } = useAccount();
     const setNewPersona = async () => {
         try {

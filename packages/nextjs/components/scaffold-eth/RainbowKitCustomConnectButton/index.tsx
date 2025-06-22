@@ -31,8 +31,8 @@ export const RainbowKitCustomConnectButton = () => {
             {(() => {
               if (!connected) {
                 return (
-                  <button className="btn btn-primary btn-sm" onClick={openConnectModal} type="button">
-                    Connect Wallet
+                  <button className="cursor-pointer hover:bg-[#2f2f2f] hover:shadow-md transition-all py-1.5 px-4 text-xl rounded-full flex items-center gap-2" onClick={openConnectModal} type="button">
+                    Sign Up
                   </button>
                 );
               }
@@ -43,19 +43,19 @@ export const RainbowKitCustomConnectButton = () => {
 
               return (
                 <>
-                  <div className="flex flex-col items-center mr-1">
+                  {/* <div className="flex flex-col items-center mr-1">
                     <Balance address={account.address as Address} className="min-h-0 h-auto" />
                     <span className="text-xs" style={{ color: networkColor }}>
                       {chain.name}
                     </span>
-                  </div>
+                  </div> */}
                   <AddressInfoDropdown
                     address={account.address as Address}
                     displayName={account.displayName}
                     ensAvatar={account.ensAvatar}
                     blockExplorerAddressLink={blockExplorerAddressLink}
                   />
-                  <AddressQRCodeModal address={account.address as Address} modalId="qrcode-modal" />
+                  {/* <AddressQRCodeModal address={account.address as Address} modalId="qrcode-modal" /> */}
                 </>
               );
             })()}

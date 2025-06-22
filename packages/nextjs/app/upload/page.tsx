@@ -162,7 +162,7 @@ const TwitterArchiveUploader: React.FC = () => {
                 await writeYourContractAsync(
                     {
                         functionName: "setPersona",
-                        args: [JSON.stringify({ address: connectedAddress, niche: "generic", ...result.persona }), 5],
+                        args: [JSON.stringify({ address: connectedAddress, niche: "general", ...result.persona }), 5],
 
                     },
                     {
@@ -325,8 +325,7 @@ const TwitterArchiveUploader: React.FC = () => {
                                         </div>
                                         <div>
                                             <h3 className="text-lg font-medium text-neutral-100">Archive Uploaded Successfully</h3>
-                                            <p className="text-neutral-400 text-sm">Ready for processing</p>
-                                        </div>
+                                         </div>
                                     </div>
                                     <button
                                         onClick={resetUpload}
@@ -337,18 +336,18 @@ const TwitterArchiveUploader: React.FC = () => {
                                             }`}
                                     >
                                         {uploadState.isProcessing || isPending ? (
-                                            <div className="flex items-center space-x-2">
+                                            <div className="flex items-center space-x-2 ">
                                                 <Loader2 size={16} className="animate-spin" />
                                                 <span>Processing...</span>
                                             </div>
                                         ) : (
-                                            'Upload Different File'
+                                            <p className='cursor-pointer'>Upload Different File</p>
                                         )}
                                     </button>
                                 </div>
                             </div>
 
-                            <div className='flex justify-center'> {<PersonaCard data={currentPersona} />}</div>
+                            <div className='flex justify-center my-2'> {<PersonaCard data={currentPersona} />}</div>
                         </>
                     )
                         : <p className='flex justify-center items-center mx-auto my-10'> <RainbowKitCustomConnectButton /> </p>}
@@ -377,12 +376,7 @@ const TwitterArchiveUploader: React.FC = () => {
                             <p>Download the ZIP file from the email and upload it here</p>
                         </div>
                     </div>
-                    <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                        <p className="text-blue-300 text-sm flex items-start space-x-2">
-                            <ExternalLink size={16} className="mt-0.5 flex-shrink-0" />
-                            <span>Need help? Visit <strong>Twitter Help Center</strong> for detailed instructions</span>
-                        </p>
-                    </div>
+                     
                 </div>
 
 

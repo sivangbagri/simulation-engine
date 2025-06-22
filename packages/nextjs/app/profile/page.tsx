@@ -3,6 +3,7 @@ import React, { useEffect } from 'react'
 import { useAccount } from "wagmi"
 import PersonaCard from '~~/components/Persona/PersonaCard';
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
+import Tilt from "react-parallax-tilt";
 
 const Profile: React.FC = () => {
 
@@ -13,9 +14,11 @@ const Profile: React.FC = () => {
         args: [connectedAddress],
     });
     return (
-        <>
-            {currentPersona && <PersonaCard data={JSON.parse(currentPersona)} />}
-        </>
+        <div className="min-h-screen bg-neutral-950 text-neutral-50 py-12 px-6 flex flex-col items-center">
+
+
+            {currentPersona && <Tilt> <PersonaCard data={JSON.parse(currentPersona)} /> </Tilt>}
+        </div>
     )
 
 

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { Plus, Trash2, Download, Send } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 
+import React, { useState } from 'react';
+import { Plus, Trash2, Download, Send, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useTransition } from "react"
 // TypeScript interfaces
 interface Option {
     id: string;
@@ -34,7 +35,7 @@ const SurveyBuilder: React.FC = () => {
     const [survey, setSurvey] = useState<Survey>({
         title: '',
         description: '',
-        niche: '',
+        niche: 'General',
         questions: []
     });
 
@@ -127,8 +128,10 @@ const SurveyBuilder: React.FC = () => {
     };
 
     const handleSubmit = (): void => {
-        sessionStorage.setItem('surveyJSON', JSON.stringify(survey));
-        router.push("/result");
+        startTransition(() => {
+            sessionStorage.setItem('surveyJSON', JSON.stringify(survey));
+            router.push("/result");
+        });
     };
 
     const handleSurveyTitleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
@@ -153,6 +156,7 @@ const SurveyBuilder: React.FC = () => {
         };
 
     const isSubmitDisabled: boolean = !survey.title || survey.questions.length === 0;
+    const [isPending, startTransition] = useTransition();
 
     return (
         <div className="min-h-screen bg-neutral-950 text-neutral-50 p-6">
@@ -195,7 +199,7 @@ const SurveyBuilder: React.FC = () => {
                                 onChange={handleNicheChange}
                                 className="w-full px-4 py-3 bg-neutral-800/50 border border-neutral-700/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:border-neutral-500 transition-all duration-200 text-neutral-100"
                             >
-                                <option value="Generic">Generic</option>
+                                <option value="General">General</option>
                                 <option value="Gaming">Gaming</option>
                             </select>
                         </div>
@@ -284,27 +288,36 @@ const SurveyBuilder: React.FC = () => {
 
                 {/* Action Buttons */}
                 <div className="mt-12 flex flex-col sm:flex-row gap-4">
-                    <button
+                    {/* <button
                         onClick={exportSurvey}
                         disabled={isSubmitDisabled}
                         className="cursor-pointer flex-1 px-6 py-4 bg-neutral-800/50 hover:bg-neutral-700/50 disabled:bg-neutral-800/30 disabled:opacity-50 disabled:cursor-not-allowed border border-neutral-700/50 rounded-xl transition-all duration-200 flex items-center justify-center space-x-3 text-neutral-100 backdrop-blur-sm shadow-lg"
                     >
                         <Download size={20} />
                         <span className="font-medium">Export Survey JSON</span>
-                    </button>
+                    </button> */}
 
                     <button
                         onClick={handleSubmit}
-                        disabled={isSubmitDisabled}
-                        className="cursor-pointer flex-1 px-6 py-4 bg-white text-black hover:bg-neutral-100 disabled:bg-neutral-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all duration-200 flex items-center justify-center space-x-3 shadow-lg font-medium"
+                        disabled={isSubmitDisabled || isPending}
+                        className="cursor-pointer flex-1 px-6 py-4 bg-white text-black hover:bg-neutral-100 disabled:bg-neutral-200 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all duration-200 flex items-center justify-center space-x-3 shadow-lg font-medium mb-7"
                     >
-                        <Send size={20} />
-                        <span>Submit Survey</span>
+                        {isPending ? (
+                            <>
+                                <Loader2 size={20} className="animate-spin" />
+                                <span>Submitting...</span>
+                            </>
+                        ) : (
+                            <>
+                                <Send size={20} />
+                                <span>Submit Survey</span>
+                            </>
+                        )}
                     </button>
                 </div>
 
                 {/* Preview JSON */}
-                {survey.title && (
+                {/* {survey.title && (
                     <div className="mt-12">
                         <details className="bg-neutral-900/30 backdrop-blur-sm rounded-xl border border-neutral-800/30 shadow-lg overflow-hidden">
                             <summary className="p-6 cursor-pointer hover:bg-neutral-800/30 transition-all duration-200 text-neutral-200 font-medium">
@@ -317,7 +330,7 @@ const SurveyBuilder: React.FC = () => {
                             </div>
                         </details>
                     </div>
-                )}
+                )} */}
             </div>
         </div>
     );
