@@ -35,7 +35,7 @@ const SurveyBuilder: React.FC = () => {
     const [survey, setSurvey] = useState<Survey>({
         title: '',
         description: '',
-        niche: 'General',
+        niche: 'Gaming',
         questions: []
     });
 
@@ -162,8 +162,10 @@ const SurveyBuilder: React.FC = () => {
         <div className="min-h-screen bg-neutral-950 text-neutral-50 p-6">
             <div className="max-w-4xl mx-auto">
                 <div className="mb-12 text-center">
-                    <h1 className="text-4xl font-bold mb-4 text-white">Zapp your idea</h1>
-                    <p className="text-neutral-400 text-lg">Create beautifully-designed, accessible surveys with an intuitive builder</p>
+                    <h1 className="text-4xl font-bold mb-4 text-white">Zapp your idea!</h1>
+                    <p className="text-neutral-400 text-lg">Validate Instantly. Build with Confidence
+
+                    </p>
                 </div>
 
                 {/* Survey Info */}
@@ -199,8 +201,9 @@ const SurveyBuilder: React.FC = () => {
                                 onChange={handleNicheChange}
                                 className="w-full px-4 py-3 bg-neutral-800/50 border border-neutral-700/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-neutral-500 focus:border-neutral-500 transition-all duration-200 text-neutral-100"
                             >
-                                <option value="General">General</option>
                                 <option value="Gaming">Gaming</option>
+
+                                <option value="General" disabled>More (coming soon)</option>
                             </select>
                         </div>
                     </div>

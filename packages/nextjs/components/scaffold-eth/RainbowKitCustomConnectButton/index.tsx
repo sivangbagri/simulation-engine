@@ -31,7 +31,7 @@ export const RainbowKitCustomConnectButton = () => {
             {(() => {
               if (!connected) {
                 return (
-                  <button className="cursor-pointer hover:bg-[#2f2f2f] hover:shadow-md transition-all py-1.5 px-4 text-xl rounded-full flex items-center gap-2" onClick={openConnectModal} type="button">
+                  <button className="cursor-pointer hover:bg-[#2f2f2f] hover:shadow-md transition-all py-1.5 px-4 text-md rounded-full flex items-center gap-2" onClick={openConnectModal} type="button">
                     Sign Up
                   </button>
                 );

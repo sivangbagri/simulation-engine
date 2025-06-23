@@ -254,9 +254,9 @@ const TwitterArchiveUploader: React.FC = () => {
 
                 {/* Error Message */}
                 {uploadState.error && (
-                    <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center space-x-3">
+                    <div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center space-x-3 mb-4">
                         <AlertCircle size={20} className="text-red-400 flex-shrink-0" />
-                        <p className="text-red-300">{uploadState.error}</p>
+                        <p className="text-red-300">{uploadState.error}. Make sure its a valid twitter archive </p>
                     </div>
                 )}
 
@@ -308,11 +308,11 @@ const TwitterArchiveUploader: React.FC = () => {
                                     <p className="text-neutral-400 mb-4">
                                         Drag and drop your ZIP file here, or click to browse
                                     </p>
-                                    <button className="px-6 py-3 bg-white text-black hover:bg-neutral-100 rounded-lg font-medium transition-colors shadow-lg">
+                                    <button className="cursor-pointer px-6 py-3 bg-white text-black hover:bg-neutral-100 rounded-lg font-medium transition-colors shadow-lg">
                                         Choose File
                                     </button>
                                 </div>
-                                <p className="text-sm text-neutral-500">Supports ZIP files up to 500MB</p>
+                                <p className="text-sm text-neutral-500">Supports ZIP files up to 700MB</p>
                             </div>
                         </div>
                     ) : (

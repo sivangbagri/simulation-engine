@@ -9,12 +9,15 @@ import { SkeletonText } from '../result/page';
 
 const Leaderboard: React.FC = () => {
     const { address: connectedAddress } = useAccount()
+    const username: Record<string,string> = {}
     const { data: leaderboardData, isFetched } = useScaffoldReadContract({
         contractName: "Persona",
         functionName: "getLeaderboard"
     })
-
+  
     const [userAddresses, userpoints] = leaderboardData || [[], []];
+
+
 
     // Sort users by points in descending order
     const sortedLeaderboard = useMemo(() => {
@@ -35,6 +38,21 @@ const Leaderboard: React.FC = () => {
             return 0;
         });
     }, [userAddresses, userpoints]);
+
+    // userAddresses.map((addr:string)=> (
+
+    //     username[addr]=useScaffoldReadContract({
+    //         contractName: "Persona",
+    //         functionName: "getPersona",
+    //         args: [addr]
+
+
+    //     }).data?.basic_info.username
+
+
+
+
+    // ))
 
     // Get rank styling based on position
     const getRankStyling = (rank: number) => {
@@ -73,7 +91,7 @@ const Leaderboard: React.FC = () => {
             {/* Title Section */}
             <h1 className="text-4xl font-bold text-white mb-2">Leaderboard</h1>
             <p className="text-neutral-400 mb-8 text-sm text-center">
-                View top contributors ranked by points
+            Track which AI personas are driving the future of feedback
             </p>
 
             {/* Card */}
@@ -136,7 +154,7 @@ const Leaderboard: React.FC = () => {
                                         </div>
                                         <div className="flex flex-col text-left">
                                             <div className="text-neutral-100 font-medium text-base leading-tight">
-                                                hivang26
+                                                {/* {username[user.address]} */}
                                             </div>
                                             <div className={`text-neutral-400 text-xs leading-tight ${isConnectedUser ? "font-bold" : ""}`}>
                                                 {user.address.slice(0, 6)}...{user.address.slice(-4)}                                             {isConnectedUser && <span className="ml-2 text-blue-400 font-semibold">(You)</span>}

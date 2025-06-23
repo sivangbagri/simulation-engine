@@ -1,12 +1,12 @@
 "use client"
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
-import { useScaffoldReadContract,useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 import Link from "next/link"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~~/components/ui/tabs"
 import { SimulationInput, SimulationOutput, Persona, Survey } from "~~/types/simulation"
-import PersonaCard from '~~/components/Persona/PersonaCard';
+import PersonaCard, { PersonaCardSkeleton } from '~~/components/Persona/PersonaCard';
 import Incentivize from '~~/components/Incentivize';
-
+import {useAccount} from "wagmi"
 // Skeleton Components
 export const SkeletonBar = ({ width = "100%" }: { width?: string }) => (
     <div
@@ -86,7 +86,13 @@ const Result: React.FC = () => {
     const [niche, setNiche] = useState("")
     const [rewardsProcessed, setRewardsProcessed] = useState(false) // Track if rewards have been processed
     const { writeContractAsync: writeYourContractAsync, isPending } = useScaffoldWriteContract({ contractName: "Persona" });
-
+    const { address: connectedAddress } = useAccount();
+     
+    const { data: hasPersona } = useScaffoldReadContract({
+        contractName: "Persona",
+        functionName: "hasPersona",
+        args: [connectedAddress],
+    });
     // Process survey data with results
     const processedSurveyData = useMemo(() => {
         if (!parsedSurvey || !results) {
@@ -134,18 +140,18 @@ const Result: React.FC = () => {
             const result = await response.json();
             if (response.ok && result.success) {
                 console.log("✅ Rewards processed successfully:", result);
-                
+
                 setRewardsProcessed(true);
             } else {
                 console.error("❌ Reward processing failed:", result);
-                 
+
             }
-        
+
         } catch (error) {
             console.error("❌ Error rewarding personas:", error);
         }
     };
-    
+
 
     useEffect(() => {
         console.log("from contract", (allPersona?.[1]));
@@ -163,7 +169,7 @@ const Result: React.FC = () => {
         else {
             console.log("not found from contract")
         }
-     }, [allPersona, niche]);
+    }, [allPersona, niche]);
 
     const simulateSurvey = useCallback(async (data: SimulationInput): Promise<SimulationOutput> => {
         const response = await fetch('/api/simulate', {
@@ -276,15 +282,15 @@ const Result: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-neutral-900 text-white">
+        <div className="min-h-screen bg-neutral-950 text-neutral-50 p-6">
             <div className="container mx-auto px-4 py-8">
-                <div className="flex justify-between items-center mb-10">
-                    <div>
+                <div className="flex justify-between items-center mb-10 mx-auto">
+                    <div className=''>
                         <h1 className="text-3xl font-bold">Survey Results</h1>
-                        <p className="text-neutral-400">View responses and analytics</p>
+                        <p className="text-neutral-400">View responses and participants</p>
                     </div>
                     <Link href="/">
-                        <button className="px-4 py-2 border border-neutral-600 rounded-xl hover:bg-neutral-800 transition-colors">
+                        <button className="cursor-pointer px-4 py-2 border border-neutral-600 rounded-xl hover:bg-neutral-800 transition-colors">
                             Back to Home
                         </button>
                     </Link>
@@ -292,7 +298,7 @@ const Result: React.FC = () => {
 
                 <div className="max-w-6xl mx-auto space-y-8">
                     {/* Survey Info */}
-                    <div className="bg-neutral-800 rounded-2xl p-6 border border-neutral-700">
+                    <div className="bg-neutral-900/50 rounded-2xl p-6 border border-neutral-700">
                         {parsedSurvey ? (
                             <>
                                 <h2 className="text-xl font-semibold mb-2">{parsedSurvey.title}</h2>
@@ -320,7 +326,7 @@ const Result: React.FC = () => {
                     </div>
 
                     {/* Responses */}
-                    <div className="bg-neutral-800 rounded-2xl p-6 border border-neutral-700">
+                    <div className="bg-neutral-900/50 rounded-2xl p-6 border border-neutral-700">
                         <h2 className="text-xl font-semibold mb-6">Responses</h2>
                         <div className="space-y-8">
                             {processedSurveyData ? (
@@ -338,9 +344,9 @@ const Result: React.FC = () => {
                                                             {option.percentage}% ({option.responses} responses)
                                                         </span>
                                                     </div>
-                                                    <div className="w-full bg-neutral-700 rounded-full h-2">
+                                                    <div className="w-full bg-neutral-700 rounded-full h-3">
                                                         <div
-                                                            className="bg-white h-2 rounded-full transition-all duration-300"
+                                                            className="bg-white h-3 rounded-full transition-all duration-300"
                                                             style={{ width: `${option.percentage}%` }}
                                                         ></div>
                                                     </div>
@@ -364,59 +370,29 @@ const Result: React.FC = () => {
                     </div>
 
                     {/* Participants */}
-                    <div className='bg-neutral-800 rounded-2xl p-6 border border-neutral-700' >
-                        <h2 className="text-xl font-semibold mb-2">Participants</h2>
-
+                    <div className='bg-neutral-900/50 rounded-2xl p-6 border border-neutral-700' >
+                        <div className="flex items-baseline justify-between">
+                            <h2 className="text-xl  font-semibold mb-6">Participants</h2>
+                            <p className="text-neutral-400 text-md"> {niche.charAt(0).toUpperCase() + niche.slice(1)} ({allPersonas.length})</p>
+                        </div>
+                        
+                        
                         {parsedSurvey && (
-                            <Tabs defaultValue="general" className="w-full mt-5">
-                                <TabsList className="grid w-full grid-cols-2 bg-neutral-700 p-1 rounded-lg mb-6">
-                                    <TabsTrigger
-                                        value="general"
-                                        className="data-[state=active]:bg-neutral-600 data-[state=active]:text-white text-neutral-300 rounded-md transition-all"
-                                    >
-                                        General  ({allPersonas.filter((persona) => (persona.niche === "general")).length})
-                                    </TabsTrigger>
-                                    <TabsTrigger
-                                        value="gaming"
-                                        className="data-[state=active]:bg-neutral-600 data-[state=active]:text-white text-neutral-300 rounded-md transition-all"
-                                    >
-                                        Gaming ({allPersonas.filter((persona) => (persona.niche === "gaming")).length})
-                                    </TabsTrigger>
-                                </TabsList>
 
-                                <TabsContent value="general" className="mt-0">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {allPersonas.length > 0 ? (
-                                            allPersonas.filter((persona) => (persona.niche === "general")).map((persona: Persona) => (
-                                                <PersonaCard key={persona.address} data={persona} />
-                                            ))
-                                        ) : (
-                                            <div className="col-span-full text-center py-8">
-                                                <p className="text-neutral-400">No general participants yet</p>
-                                            </div>
-                                        )}
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 ">
+                                {!hasPersona && <PersonaCardSkeleton/>}
+                                {allPersonas.length > 0 ? (
+                                    allPersonas.map((persona: Persona) => (
+                                        <PersonaCard key={persona.address} data={persona} />
+                                    ))
+                                ) : (
+                                    <div className="col-span-full text-center py-8">
+                                        <p className="text-neutral-400">No gaming participants yet</p>
                                     </div>
-                                    {/* <div className='flex justify-center my-5 '> <Incentivize niche="general" /></div> */}
+                                )}
+                            </div>
 
-
-                                </TabsContent>
-
-                                <TabsContent value="gaming" className="mt-0">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {allPersonas.length > 0 ? (
-                                            allPersonas.filter((persona) => (persona.niche === "gaming")).map((persona: Persona) => (
-                                                <PersonaCard key={persona.address} data={persona} />
-                                            ))
-                                        ) : (
-                                            <div className="col-span-full text-center py-8">
-                                                <p className="text-neutral-400">No gaming participants yet</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                    {/* <div className='flex justify-center my-5 '> <Incentivize niche="gaming" /></div> */}
-
-                                </TabsContent>
-                            </Tabs>
                         )}
 
                         {!parsedSurvey && (
@@ -441,3 +417,5 @@ const Result: React.FC = () => {
 }
 
 export default Result
+
+ 
