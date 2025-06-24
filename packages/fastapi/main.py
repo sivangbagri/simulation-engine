@@ -1,22 +1,25 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from models import *
-from sentence_transformers import SentenceTransformer, util
-import torch
 from pydantic import BaseModel
 from typing import List, Dict
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import zipfile
-import tempfile
 import os
 import json
 import re
 from collections import Counter
 from datetime import datetime
-from typing import Optional
 import io
+import google.generativeai as genai
+import numpy as np
+from dotenv import load_dotenv
+load_dotenv()
+
+
 app = FastAPI()
- 
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
 
 class ModelManager:
     _instance = None
@@ -24,20 +27,50 @@ class ModelManager:
     _nltk_initialized = False
     _sia = None
     _stop_words = None
-    _word_tokenize= None
-    
+    _word_tokenize = None
+
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
-    
-    def get_sentence_transformer(self):
-        if self._model is None:
-            print("Loading SentenceTransformer model...")
-            self._model = SentenceTransformer("all-MiniLM-L6-v2")
-            print("Model loaded successfully")
-        return self._model
-    
+
+    def get_embeddings(self, texts: List[str]):
+        """Get embeddings using Gemini API"""
+        try:
+            model = genai.GenerativeModel('models/embedding-001')
+            embeddings = []
+
+            for text in texts:
+                result = genai.embed_content(
+                    model="models/embedding-001",
+                    content=text,
+                    task_type="semantic_similarity"
+                )
+                embeddings.append(result['embedding'])
+
+            return np.array(embeddings)
+
+        except Exception as e:
+            print(f"Gemini API error: {str(e)}")
+            return self._fallback_similarity(texts)
+
+    def _fallback_similarity(self, texts: List[str]):
+        """Simple fallback when API fails"""
+        embeddings = []
+        for text in texts:
+            words = set(text.lower().split())
+            vector = [len(words & set(t.lower().split())) for t in texts]
+            embeddings.append(vector)
+        return np.array(embeddings)
+
+    def cosine_similarity(self, vec1, vec2):
+        """Calculate cosine similarity"""
+        dot_product = np.dot(vec1, vec2)
+        norm1 = np.linalg.norm(vec1)
+        norm2 = np.linalg.norm(vec2)
+        if norm1 == 0 or norm2 == 0:
+            return 0
+        return dot_product / (norm1 * norm2)
     def get_nltk_components(self):
         if not self._nltk_initialized:
             try:
@@ -53,11 +86,10 @@ class ModelManager:
                 from nltk.sentiment import SentimentIntensityAnalyzer
                 from nltk.corpus import stopwords
                 from nltk.tokenize import word_tokenize
-                
                 self._sia = SentimentIntensityAnalyzer()
                 self._stop_words = set(stopwords.words('english'))
                 self._nltk_initialized = True
-                self._word_tokenize=word_tokenize
+                self._word_tokenize = word_tokenize
                 print("NLTK components initialized")
             except Exception as e:
                 print(f"NLTK initialization error: {str(e)}")
@@ -71,7 +103,6 @@ model_manager = ModelManager()
 
 @app.post("/simulate")
 def simulate(input: SimulationInput):
-    model = model_manager.get_sentence_transformer()
     results = []
 
     for persona in input.personas:
@@ -85,21 +116,37 @@ def simulate(input: SimulationInput):
             " ".join(p.likes_analysis.get("liked_topics", []))
         ])
 
-        persona_embedding = model.encode(summary, convert_to_tensor=True)
+        # persona_embedding = model.encode(summary, convert_to_tensor=True)
 
         persona_result = {
             "persona": p.basic_info.get("username", "unknown"),
             "responses": []
         }
-
+        # Process each question
         for q in input.survey.questions:
             option_texts = [f"{q.text} {opt.text}" for opt in q.options]
-            option_embeddings = model.encode(option_texts, convert_to_tensor=True)
 
-            similarities = util.cos_sim(persona_embedding, option_embeddings)[0]
-            best_idx = torch.argmax(similarities).item()
+            # Get embeddings from OpenAI
+            all_texts = [summary] + option_texts
+            embeddings = model_manager.get_embeddings(all_texts)
 
-            selected_option = q.options[best_idx]
+            if len(embeddings) > 1:
+                persona_embedding = embeddings[0]
+                option_embeddings = embeddings[1:]
+
+                # Calculate similarities
+                similarities = []
+                for opt_embedding in option_embeddings:
+                    sim = model_manager.cosine_similarity(
+                        persona_embedding, opt_embedding)
+                    similarities.append(sim)
+
+                # Find best match
+                best_idx = np.argmax(similarities)
+                selected_option = q.options[best_idx]
+            else:
+                # Fallback: select first option
+                selected_option = q.options[0]
 
             persona_result["responses"].append({
                 "question_id": q.id,
@@ -112,28 +159,7 @@ def simulate(input: SimulationInput):
 
     return {"results": results}
 
-
-
-# # Import NLTK components with error handling
-# try:
-#     import nltk
-#     # Download all necessary NLTK resources at the beginning
-#     nltk.download('punkt_tab', quiet=True)
-#     nltk.download('wordnet', quiet=True)
-#     nltk.download('omw-1.4', quiet=True)
-#     nltk.download('punkt', quiet=True)
-#     nltk.download('stopwords', quiet=True)
-#     nltk.download('vader_lexicon', quiet=True)
-#     from nltk.tokenize import word_tokenize
-#     from nltk.corpus import stopwords
-#     from nltk.sentiment import SentimentIntensityAnalyzer
-#     NLTK_AVAILABLE = True
-# except Exception as e:
-#     print(f"NLTK initialization error: {str(e)}")
-#     NLTK_AVAILABLE = False
-
-
-
+    
 
 
 # Enable CORS for frontend integration
@@ -145,16 +171,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 class TwitterPersonaGenerator:
     def __init__(self):
         pass
+
     def _get_nltk_components(self):
         """Get NLTK components lazily"""
         return model_manager.get_nltk_components()
-    
-    
-        
- 
+
     def load_twitter_archive_from_content(self, tweets_content=None, likes_content=None, account_content=None):
         """Load data from Twitter archive file contents"""
         data = {
@@ -167,7 +192,8 @@ class TwitterPersonaGenerator:
         if tweets_content:
             try:
                 # Extract the JSON part from the JavaScript file
-                json_str = tweets_content.replace('window.YTD.tweets.part0 = ', '', 1)
+                json_str = tweets_content.replace(
+                    'window.YTD.tweets.part0 = ', '', 1)
                 tweets_data = json.loads(json_str)
 
                 for tweet_obj in tweets_data:
@@ -181,7 +207,8 @@ class TwitterPersonaGenerator:
         if likes_content:
             try:
                 # Extract the JSON part from the JavaScript file
-                json_str = likes_content.replace('window.YTD.like.part0 = ', '', 1)
+                json_str = likes_content.replace(
+                    'window.YTD.like.part0 = ', '', 1)
                 likes_data = json.loads(json_str)
 
                 for like_obj in likes_data:
@@ -195,7 +222,8 @@ class TwitterPersonaGenerator:
         if account_content:
             try:
                 # Extract the JSON part from the JavaScript file
-                json_str = account_content.replace('window.YTD.account.part0 = ', '', 1)
+                json_str = account_content.replace(
+                    'window.YTD.account.part0 = ', '', 1)
                 account_data = json.loads(json_str)
 
                 if account_data and len(account_data) > 0 and "account" in account_data[0]:
@@ -232,7 +260,8 @@ class TwitterPersonaGenerator:
 
             # Extract mentioned users
             for mention in entities.get("user_mentions", []):
-                tweet_info["mentioned_users"].append(mention.get("screen_name", ""))
+                tweet_info["mentioned_users"].append(
+                    mention.get("screen_name", ""))
 
             # Extract hashtags
             for hashtag in entities.get("hashtags", []):
@@ -259,7 +288,8 @@ class TwitterPersonaGenerator:
         for tweet in tweets:
             if tweet["created_at"]:
                 try:
-                    dt = datetime.strptime(tweet["created_at"], "%a %b %d %H:%M:%S +0000 %Y")
+                    dt = datetime.strptime(
+                        tweet["created_at"], "%a %b %d %H:%M:%S +0000 %Y")
                     timestamps.append(dt)
                     weekdays.append(dt.weekday())
                     hours.append(dt.hour)
@@ -276,13 +306,16 @@ class TwitterPersonaGenerator:
 
         if timestamps:
             # Most active days
-            day_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+            day_names = ["Monday", "Tuesday", "Wednesday",
+                         "Thursday", "Friday", "Saturday", "Sunday"]
             day_counts = Counter(weekdays)
-            patterns["most_active_days"] = [day_names[day] for day, _ in day_counts.most_common(3)]
+            patterns["most_active_days"] = [day_names[day]
+                                            for day, _ in day_counts.most_common(3)]
 
             # Most active hours
             hour_counts = Counter(hours)
-            patterns["most_active_hours"] = [hour for hour, _ in hour_counts.most_common(3)]
+            patterns["most_active_hours"] = [
+                hour for hour, _ in hour_counts.most_common(3)]
 
             # Posting frequency
             if len(timestamps) > 1:
@@ -323,7 +356,8 @@ class TwitterPersonaGenerator:
             try:
                 # Tokenize and clean text
                 words = word_tokenize(all_text.lower())
-                filtered_words = [word for word in words if word.isalpha() and word not in stop_words and len(word) > 2]
+                filtered_words = [word for word in words if word.isalpha(
+                ) and word not in stop_words and len(word) > 2]
                 common_words = Counter(filtered_words)
             except Exception as e:
                 print(f"Error in NLTK processing: {str(e)}")
@@ -362,7 +396,8 @@ class TwitterPersonaGenerator:
         top_hashtags = [tag for tag, count in hashtag_freq.most_common(10)]
 
         # Get frequent topics (common words)
-        common_words_list = [word for word, count in common_words.most_common(20)]
+        common_words_list = [word for word,
+                             count in common_words.most_common(20)]
 
         return {
             "interests": [interest["category"] for interest in interests[:5]],
@@ -374,55 +409,70 @@ class TwitterPersonaGenerator:
         """Analyze sentiment and communication style from tweets"""
         if not tweets:
             return {}
-        
+
         sia, stop_words, nltk_available, word_tokenize = self._get_nltk_components()
 
         # Combine all original tweet text (non-retweets)
-        original_tweets_text = [t["text"] for t in tweets if not t["is_retweet"]]
+        original_tweets_text = [t["text"]
+                                for t in tweets if not t["is_retweet"]]
 
         sentiment_scores = []
         question_count = 0
         exclamation_count = 0
         url_count = 0
-        emoji_pattern = re.compile(r'[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F700-\U0001F77F\U0001F780-\U0001F7FF\U0001F800-\U0001F8FF\U0001F900-\U0001F9FF\U0001FA00-\U0001FA6F\U0001FA70-\U0001FAFF\U00002702-\U000027B0\U000024C2-\U0001F251]+')
+        emoji_pattern = re.compile(
+            r'[\U0001F600-\U0001F64F\U0001F300-\U0001F5FF\U0001F680-\U0001F6FF\U0001F700-\U0001F77F\U0001F780-\U0001F7FF\U0001F800-\U0001F8FF\U0001F900-\U0001F9FF\U0001FA00-\U0001FA6F\U0001FA70-\U0001FAFF\U00002702-\U000027B0\U000024C2-\U0001F251]+')
         emoji_count = 0
 
         for text in original_tweets_text:
             # Sentiment analysis with NLTK if available
             if nltk_available:
                 try:
-                    sentiment_scores.append(sia.polarity_scores(text)["compound"])
+                    sentiment_scores.append(
+                        sia.polarity_scores(text)["compound"])
                 except Exception as e:
                     # Fallback to simple sentiment analysis
-                    positive_words = ["love", "great", "good", "amazing", "awesome", "excited", "happy", "thanks"]
-                    negative_words = ["bad", "hate", "terrible", "awful", "sad", "disappointed", "annoying", "never"]
+                    positive_words = [
+                        "love", "great", "good", "amazing", "awesome", "excited", "happy", "thanks"]
+                    negative_words = [
+                        "bad", "hate", "terrible", "awful", "sad", "disappointed", "annoying", "never"]
 
-                    positive_count = sum(text.lower().count(word) for word in positive_words)
-                    negative_count = sum(text.lower().count(word) for word in negative_words)
+                    positive_count = sum(text.lower().count(word)
+                                         for word in positive_words)
+                    negative_count = sum(text.lower().count(word)
+                                         for word in negative_words)
 
-                    sentiment_scores.append(0.5 if positive_count > negative_count else -0.5 if negative_count > positive_count else 0)
+                    sentiment_scores.append(
+                        0.5 if positive_count > negative_count else -0.5 if negative_count > positive_count else 0)
             else:
                 # Simple sentiment analysis fallback
-                positive_words = ["love", "great", "good", "amazing", "awesome", "excited", "happy", "thanks"]
-                negative_words = ["bad", "hate", "terrible", "awful", "sad", "disappointed", "annoying", "never"]
+                positive_words = ["love", "great", "good",
+                                  "amazing", "awesome", "excited", "happy", "thanks"]
+                negative_words = ["bad", "hate", "terrible", "awful",
+                                  "sad", "disappointed", "annoying", "never"]
 
-                positive_count = sum(text.lower().count(word) for word in positive_words)
-                negative_count = sum(text.lower().count(word) for word in negative_words)
+                positive_count = sum(text.lower().count(word)
+                                     for word in positive_words)
+                negative_count = sum(text.lower().count(word)
+                                     for word in negative_words)
 
-                sentiment_scores.append(0.5 if positive_count > negative_count else -0.5 if negative_count > positive_count else 0)
+                sentiment_scores.append(
+                    0.5 if positive_count > negative_count else -0.5 if negative_count > positive_count else 0)
 
             # Count questions and exclamations
             question_count += text.count("?")
             exclamation_count += text.count("!")
 
             # Count URLs
-            url_count += len(re.findall(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', text))
+            url_count += len(re.findall(
+                r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', text))
 
             # Count emojis
             emoji_count += len(emoji_pattern.findall(text))
 
         # Calculate average sentiment
-        avg_sentiment = sum(sentiment_scores) / len(sentiment_scores) if sentiment_scores else 0
+        avg_sentiment = sum(sentiment_scores) / \
+            len(sentiment_scores) if sentiment_scores else 0
 
         # Determine tone
         tone = "Neutral"
@@ -447,7 +497,8 @@ class TwitterPersonaGenerator:
 
         # Determine formality
         formality = "Casual"
-        avg_word_length = sum(len(word) for text in original_tweets_text for word in text.split()) / sum(len(text.split()) for text in original_tweets_text)
+        avg_word_length = sum(len(word) for text in original_tweets_text for word in text.split(
+        )) / sum(len(text.split()) for text in original_tweets_text)
         if avg_word_length > 5.5:
             formality = "Formal"
         elif avg_word_length > 4.5:
@@ -463,7 +514,8 @@ class TwitterPersonaGenerator:
     def extract_personality_traits(self, tweets):
         """Extract personality traits based on tweet content"""
         # Combine all original tweet text
-        all_text = " ".join([t["text"].lower() for t in tweets if not t["is_retweet"]])
+        all_text = " ".join([t["text"].lower()
+                            for t in tweets if not t["is_retweet"]])
 
         # Define trait indicators with related keywords
         trait_indicators = {
@@ -486,7 +538,8 @@ class TwitterPersonaGenerator:
             trait_scores[trait] = score
 
         # Get top traits
-        sorted_traits = sorted(trait_scores.items(), key=lambda x: x[1], reverse=True)
+        sorted_traits = sorted(trait_scores.items(),
+                               key=lambda x: x[1], reverse=True)
         top_traits = [trait for trait, score in sorted_traits if score > 0][:5]
 
         return top_traits
@@ -507,7 +560,8 @@ class TwitterPersonaGenerator:
 
         # Calculate retweet percentage
         retweet_count = sum(1 for tweet in tweets if tweet["is_retweet"])
-        retweet_percentage = (retweet_count / len(tweets)) * 100 if tweets else 0
+        retweet_percentage = (retweet_count / len(tweets)
+                              ) * 100 if tweets else 0
 
         # Determine interaction style
         interaction_style = "Balanced"
@@ -530,7 +584,7 @@ class TwitterPersonaGenerator:
         """Analyze liked tweets to understand interests"""
         if not likes:
             return {}
-        sia, stop_words, nltk_available,word_tokenize = self._get_nltk_components()
+        sia, stop_words, nltk_available, word_tokenize = self._get_nltk_components()
 
         # Extract text from liked tweets
         liked_texts = []
@@ -548,7 +602,8 @@ class TwitterPersonaGenerator:
 
         # Analyze hashtags
         hashtag_freq = Counter(liked_hashtags)
-        top_liked_hashtags = [tag for tag, count in hashtag_freq.most_common(10)]
+        top_liked_hashtags = [tag for tag,
+                              count in hashtag_freq.most_common(10)]
 
         # Combine all liked text
         all_liked_text = " ".join(liked_texts)
@@ -561,13 +616,15 @@ class TwitterPersonaGenerator:
         if nltk_available:
             try:
                 words = word_tokenize(all_liked_text.lower())
-                filtered_words = [word for word in words if word.isalpha() and word not in stop_words and len(word) > 2]
+                filtered_words = [word for word in words if word.isalpha(
+                ) and word not in stop_words and len(word) > 2]
                 word_freq = Counter(filtered_words)
             except Exception as e:
                 print(f"Error in NLTK processing for likes: {str(e)}")
 
         # Get common words
-        common_liked_words = [word for word, count in word_freq.most_common(20)]
+        common_liked_words = [word for word,
+                              count in word_freq.most_common(20)]
 
         return {
             "top_liked_hashtags": top_liked_hashtags,
@@ -593,7 +650,8 @@ class TwitterPersonaGenerator:
         # Format creation date if available
         if account_data["creation_date"]:
             try:
-                dt = datetime.strptime(account_data["creation_date"], "%a %b %d %H:%M:%S +0000 %Y")
+                dt = datetime.strptime(
+                    account_data["creation_date"], "%a %b %d %H:%M:%S +0000 %Y")
                 account_data["creation_date"] = dt.strftime("%B %Y")
             except:
                 pass
@@ -603,7 +661,8 @@ class TwitterPersonaGenerator:
     def generate_persona_from_content(self, tweets_content=None, likes_content=None, account_content=None):
         """Generate a comprehensive persona from Twitter archive content"""
         # Load data from content
-        data = self.load_twitter_archive_from_content(tweets_content, likes_content, account_content)
+        data = self.load_twitter_archive_from_content(
+            tweets_content, likes_content, account_content)
 
         if not data["tweets"]:
             return {"error": "No tweet data found. Please ensure your ZIP contains a valid tweets.js file."}
@@ -622,18 +681,23 @@ class TwitterPersonaGenerator:
             # Try to extract from the first tweet
             if data["tweets"] and len(data["tweets"]) > 0:
                 if "user" in data["tweets"][0]:
-                    username = username or data["tweets"][0]["user"].get("name", "")
-                    screen_name = screen_name or data["tweets"][0]["user"].get("screen_name", "")
+                    username = username or data["tweets"][0]["user"].get(
+                        "name", "")
+                    screen_name = screen_name or data["tweets"][0]["user"].get(
+                        "screen_name", "")
 
         # Generate persona components
         posting_patterns = self.analyze_posting_patterns(processed_tweets)
-        topics_and_interests = self.extract_topics_and_interests(processed_tweets)
+        topics_and_interests = self.extract_topics_and_interests(
+            processed_tweets)
         sentiment_and_tone = self.analyze_sentiment_and_tone(processed_tweets)
         personality_traits = self.extract_personality_traits(processed_tweets)
-        social_interactions = self.analyze_social_interactions(processed_tweets)
+        social_interactions = self.analyze_social_interactions(
+            processed_tweets)
 
         # Analyze likes if available
-        likes_analysis = self.analyze_likes(data["likes"]) if data["likes"] else {}
+        likes_analysis = self.analyze_likes(
+            data["likes"]) if data["likes"] else {}
 
         # Compile persona
         persona = {
@@ -681,86 +745,85 @@ class TwitterPersonaGenerator:
 
         return persona
 
-# Initialize the generator
-# generator = TwitterPersonaGenerator()
 
 
 @app.post("/upload-twitter-archive")
 async def upload_twitter_archive(file: UploadFile = File(...)):
     """
     Upload a Twitter archive ZIP file and generate a persona.
-    
+
     The ZIP file should contain:
     - tweets.js (required)
     - like.js (optional)
     - account.js (optional)
     """
     generator = TwitterPersonaGenerator()
-    
+
     # Validate file type
     if not file.filename.endswith('.zip'):
         raise HTTPException(status_code=400, detail="Please upload a ZIP file")
-    
+
     try:
         # Read the uploaded file content
         content = await file.read()
-        
+
         # Create a BytesIO object from the content
         zip_buffer = io.BytesIO(content)
-        
+
         # Extract required files from ZIP
         tweets_content = None
         likes_content = None
         account_content = None
-        
+
         with zipfile.ZipFile(zip_buffer, 'r') as zip_file:
             file_list = zip_file.namelist()
-            
+
             # Look for the required files
             for file_path in file_list:
                 filename = os.path.basename(file_path)
-                
+
                 if filename == 'tweets.js':
                     tweets_content = zip_file.read(file_path).decode('utf-8')
                 elif filename == 'like.js':
                     likes_content = zip_file.read(file_path).decode('utf-8')
                 elif filename == 'account.js':
                     account_content = zip_file.read(file_path).decode('utf-8')
-        
+
         # Check if tweets.js was found
         if not tweets_content:
             raise HTTPException(
-                status_code=400, 
+                status_code=400,
                 detail="tweets.js file not found in the ZIP archive. Please ensure your Twitter archive contains this file."
             )
-        
+
         # Generate persona
         persona = generator.generate_persona_from_content(
             tweets_content=tweets_content,
             likes_content=likes_content,
             account_content=account_content
         )
-        
+
         # Check for errors in persona generation
         if "error" in persona:
             raise HTTPException(status_code=400, detail=persona["error"])
-        
+
         return JSONResponse(
             content={
                 "success": True,
                 "message": "Persona generated successfully",
                 "persona": persona,
-                
+
             }
         )
-        
+
     except zipfile.BadZipFile:
         raise HTTPException(status_code=400, detail="Invalid ZIP file format")
     except UnicodeDecodeError:
-        raise HTTPException(status_code=400, detail="Unable to decode file content. Please ensure files are in UTF-8 format")
+        raise HTTPException(
+            status_code=400, detail="Unable to decode file content. Please ensure files are in UTF-8 format")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An error occurred while processing your archive: {str(e)}")
-
+        raise HTTPException(
+            status_code=500, detail=f"An error occurred while processing your archive: {str(e)}")
 
 
 if __name__ == "__main__":
