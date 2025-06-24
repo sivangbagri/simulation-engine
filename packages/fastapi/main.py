@@ -16,7 +16,7 @@ from datetime import datetime
 from typing import Optional
 import io
 app = FastAPI()
-model = SentenceTransformer("all-MiniLM-L6-v2")
+model = SentenceTransformer("all-MiniLM-L3-v2")
 
 
 @app.post("/simulate")
