@@ -20,9 +20,10 @@ import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 
 const TwitterArchiveUploader: React.FC = () => {
     const sampleData = {
+        address: "0x123" as `0x${string}`,
+        niche: "string",
         basic_info: {
-            address:"0x123",
-            niche:"string",
+
             username: "WhySid",
             screen_name: "Sidhanth_here",
             bio: "",
@@ -162,7 +163,7 @@ const TwitterArchiveUploader: React.FC = () => {
                 await writeYourContractAsync(
                     {
                         functionName: "setPersona",
-                        args: [JSON.stringify({ address: connectedAddress, niche: "general", ...result.persona }), 5],
+                        args: [JSON.stringify({ address: connectedAddress, niche: "general", ...result.persona }), BigInt(5)],
 
                     },
                     {
@@ -325,7 +326,7 @@ const TwitterArchiveUploader: React.FC = () => {
                                         </div>
                                         <div>
                                             <h3 className="text-lg font-medium text-neutral-100">Archive Uploaded Successfully</h3>
-                                         </div>
+                                        </div>
                                     </div>
                                     <button
                                         onClick={resetUpload}
@@ -376,7 +377,7 @@ const TwitterArchiveUploader: React.FC = () => {
                             <p>Download the ZIP file from the email and upload it here</p>
                         </div>
                     </div>
-                     
+
                 </div>
 
 

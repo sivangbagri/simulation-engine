@@ -2,12 +2,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createWalletClient, http, createPublicClient } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
- import { getContract } from 'viem';
+import { getContract } from 'viem';
 import deployedContracts from '~~/contracts/deployedContracts';
 
- const targetNetwork = {id:10143} as const;
+import { defineChain } from 'viem';
+const CHAIN_ID = 10143 as const;
+const targetNetwork = defineChain({
+  id: CHAIN_ID,
+  name: 'Monad Testnet',
+  nativeCurrency: {
+    name:'MON',
+    symbol: 'MON',
+    decimals: 18,
+  },
+  rpcUrls: {
+    default: {
+      http: [process.env.RPC_URL!],
+    },
+    public: {
+      http: [process.env.RPC_URL!],
+    },
+  },
+});
 
- const contractData = deployedContracts[targetNetwork.id].Persona;
+const contractData = deployedContracts[CHAIN_ID].Persona;
 
 if (!contractData) {
   throw new Error(`Contract not found for chain ${targetNetwork.id}`);
@@ -28,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate environment variables
-    const backendPrivateKey = process.env.BACKEND_PRIVATE_KEY
+    const backendPrivateKey = process.env.BACKEND_PRIVATE_KEY as `0x${string}`;
     const rpcUrl = process.env.RPC_URL;
 
     if (!backendPrivateKey) {
@@ -67,7 +85,7 @@ export async function POST(request: NextRequest) {
     for (const participant of participants) {
       try {
         console.log(`Rewarding ${participant.address} with ${rewardAmount} points`);
-        
+
         const hash = await contract.write.reward([
           participant.address as `0x${string}`,
           BigInt(rewardAmount)
@@ -110,9 +128,9 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Reward processing error:', error);
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to process rewards',
-        details: error.message 
+        details: error.message
       },
       { status: 500 }
     );
