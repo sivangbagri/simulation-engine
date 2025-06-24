@@ -5,7 +5,7 @@ import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 
 import { BlockieAvatar } from "~~/components/scaffold-eth"
 import { useAccount } from "wagmi"
-import { SkeletonText } from '../result/page';
+import { SkeletonText } from '~~/components/Skeletons/skeleton';
 
 const Leaderboard: React.FC = () => {
     const { address: connectedAddress } = useAccount()

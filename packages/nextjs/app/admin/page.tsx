@@ -124,7 +124,7 @@ const Admin: React.FC = () => {
             await writeYourContractAsync(
                 {
                     functionName: "setPersonaFor",
-                    args: [randomAccount.address, JSON.stringify({ address: randomAccount.address, niche: "gaming", ...PersonaJson }),5],
+                    args: [randomAccount.address, JSON.stringify({ address: randomAccount.address, niche: "gaming", ...PersonaJson }),BigInt(5)],
 
                 },
                 {

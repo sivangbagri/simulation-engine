@@ -4,21 +4,10 @@ import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 import Link from "next/link"
 import { SimulationInput, SimulationOutput, Persona, Survey } from "~~/types/simulation"
 import PersonaCard, { PersonaCardSkeleton } from '~~/components/Persona/PersonaCard';
-import {useAccount} from "wagmi"
-// Skeleton Components
-export const SkeletonBar = ({ width = "100%" }: { width?: string }) => (
-    <div
-        className="bg-neutral-700 rounded-full h-2 animate-pulse"
-        style={{ width }}
-    />
-);
+import { useAccount } from "wagmi"
+import { SkeletonText, SkeletonBar } from '~~/components/Skeletons/skeleton';
 
-export const SkeletonText = ({ width = "100%", height = "h-4" }: { width?: string, height?: string }) => (
-    <div
-        className={`bg-neutral-700 rounded ${height} animate-pulse`}
-        style={{ width }}
-    />
-);
+
 
 const QuestionSkeleton = () => (
     <div className="space-y-4">
@@ -84,7 +73,7 @@ const Result: React.FC = () => {
     const [niche, setNiche] = useState("")
     const [rewardsProcessed, setRewardsProcessed] = useState(false) // Track if rewards have been processed
     const { address: connectedAddress } = useAccount();
-     
+
     const { data: hasPersona } = useScaffoldReadContract({
         contractName: "Persona",
         functionName: "hasPersona",
@@ -372,13 +361,13 @@ const Result: React.FC = () => {
                             <h2 className="text-xl  font-semibold mb-6">Participants</h2>
                             <p className="text-neutral-400 text-md"> {niche.charAt(0).toUpperCase() + niche.slice(1)} ({allPersonas.length})</p>
                         </div>
-                        
-                        
+
+
                         {parsedSurvey && (
 
 
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 ">
-                                {!hasPersona && <PersonaCardSkeleton/>}
+                                {!hasPersona && <PersonaCardSkeleton />}
                                 {allPersonas.length > 0 ? (
                                     allPersonas.map((persona: Persona) => (
                                         <PersonaCard key={persona.address} data={persona} />
@@ -415,4 +404,3 @@ const Result: React.FC = () => {
 
 export default Result
 
- 
