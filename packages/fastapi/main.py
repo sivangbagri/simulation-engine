@@ -16,11 +16,62 @@ from datetime import datetime
 from typing import Optional
 import io
 app = FastAPI()
-model = SentenceTransformer("all-MiniLM-L3-v2")
+ 
+
+class ModelManager:
+    _instance = None
+    _model = None
+    _nltk_initialized = False
+    _sia = None
+    _stop_words = None
+    _word_tokenize= None
+    
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+    
+    def get_sentence_transformer(self):
+        if self._model is None:
+            print("Loading SentenceTransformer model...")
+            self._model = SentenceTransformer("all-MiniLM-L6-v2")
+            print("Model loaded successfully")
+        return self._model
+    
+    def get_nltk_components(self):
+        if not self._nltk_initialized:
+            try:
+                print("Initializing NLTK components...")
+                import nltk
+                nltk.download('punkt_tab', quiet=True)
+                nltk.download('wordnet', quiet=True)
+                nltk.download('omw-1.4', quiet=True)
+                nltk.download('punkt', quiet=True)
+                nltk.download('stopwords', quiet=True)
+                nltk.download('vader_lexicon', quiet=True)
+                
+                from nltk.sentiment import SentimentIntensityAnalyzer
+                from nltk.corpus import stopwords
+                from nltk.tokenize import word_tokenize
+                
+                self._sia = SentimentIntensityAnalyzer()
+                self._stop_words = set(stopwords.words('english'))
+                self._nltk_initialized = True
+                self._word_tokenize=word_tokenize
+                print("NLTK components initialized")
+            except Exception as e:
+                print(f"NLTK initialization error: {str(e)}")
+                self._nltk_initialized = False
+        
+        return self._sia, self._stop_words, self._nltk_initialized, self._word_tokenize
+
+# Initialize model manager
+model_manager = ModelManager()
 
 
 @app.post("/simulate")
 def simulate(input: SimulationInput):
+    model = model_manager.get_sentence_transformer()
     results = []
 
     for persona in input.personas:
@@ -63,23 +114,26 @@ def simulate(input: SimulationInput):
 
 
 
-# Import NLTK components with error handling
-try:
-    import nltk
-    # Download all necessary NLTK resources at the beginning
-    nltk.download('punkt_tab', quiet=True)
-    nltk.download('wordnet', quiet=True)
-    nltk.download('omw-1.4', quiet=True)
-    nltk.download('punkt', quiet=True)
-    nltk.download('stopwords', quiet=True)
-    nltk.download('vader_lexicon', quiet=True)
-    from nltk.tokenize import word_tokenize
-    from nltk.corpus import stopwords
-    from nltk.sentiment import SentimentIntensityAnalyzer
-    NLTK_AVAILABLE = True
-except Exception as e:
-    print(f"NLTK initialization error: {str(e)}")
-    NLTK_AVAILABLE = False
+# # Import NLTK components with error handling
+# try:
+#     import nltk
+#     # Download all necessary NLTK resources at the beginning
+#     nltk.download('punkt_tab', quiet=True)
+#     nltk.download('wordnet', quiet=True)
+#     nltk.download('omw-1.4', quiet=True)
+#     nltk.download('punkt', quiet=True)
+#     nltk.download('stopwords', quiet=True)
+#     nltk.download('vader_lexicon', quiet=True)
+#     from nltk.tokenize import word_tokenize
+#     from nltk.corpus import stopwords
+#     from nltk.sentiment import SentimentIntensityAnalyzer
+#     NLTK_AVAILABLE = True
+# except Exception as e:
+#     print(f"NLTK initialization error: {str(e)}")
+#     NLTK_AVAILABLE = False
+
+
+
 
 
 # Enable CORS for frontend integration
@@ -93,15 +147,14 @@ app.add_middleware(
 
 class TwitterPersonaGenerator:
     def __init__(self):
-        self.nltk_available = NLTK_AVAILABLE
-        if self.nltk_available:
-            try:
-                self.sia = SentimentIntensityAnalyzer()
-                self.stop_words = set(stopwords.words('english'))
-            except Exception as e:
-                print(f"Error initializing NLTK components: {str(e)}")
-                self.nltk_available = False
-
+        pass
+    def _get_nltk_components(self):
+        """Get NLTK components lazily"""
+        return model_manager.get_nltk_components()
+    
+    
+        
+ 
     def load_twitter_archive_from_content(self, tweets_content=None, likes_content=None, account_content=None):
         """Load data from Twitter archive file contents"""
         data = {
@@ -260,17 +313,17 @@ class TwitterPersonaGenerator:
         """Extract topics and interests from tweets"""
         # Combine all tweet text
         all_text = " ".join([t["text"] for t in tweets if not t["is_retweet"]])
-
+        sia, stop_words, nltk_available, word_tokenize = self._get_nltk_components()
         # Simple word frequency analysis (fallback if NLTK is not available)
         words = re.findall(r'\b[a-zA-Z]{3,}\b', all_text.lower())
         common_words = Counter(words)
 
         # Use NLTK if available
-        if self.nltk_available:
+        if nltk_available:
             try:
                 # Tokenize and clean text
                 words = word_tokenize(all_text.lower())
-                filtered_words = [word for word in words if word.isalpha() and word not in self.stop_words and len(word) > 2]
+                filtered_words = [word for word in words if word.isalpha() and word not in stop_words and len(word) > 2]
                 common_words = Counter(filtered_words)
             except Exception as e:
                 print(f"Error in NLTK processing: {str(e)}")
@@ -321,6 +374,8 @@ class TwitterPersonaGenerator:
         """Analyze sentiment and communication style from tweets"""
         if not tweets:
             return {}
+        
+        sia, stop_words, nltk_available, word_tokenize = self._get_nltk_components()
 
         # Combine all original tweet text (non-retweets)
         original_tweets_text = [t["text"] for t in tweets if not t["is_retweet"]]
@@ -334,9 +389,9 @@ class TwitterPersonaGenerator:
 
         for text in original_tweets_text:
             # Sentiment analysis with NLTK if available
-            if self.nltk_available:
+            if nltk_available:
                 try:
-                    sentiment_scores.append(self.sia.polarity_scores(text)["compound"])
+                    sentiment_scores.append(sia.polarity_scores(text)["compound"])
                 except Exception as e:
                     # Fallback to simple sentiment analysis
                     positive_words = ["love", "great", "good", "amazing", "awesome", "excited", "happy", "thanks"]
@@ -475,6 +530,7 @@ class TwitterPersonaGenerator:
         """Analyze liked tweets to understand interests"""
         if not likes:
             return {}
+        sia, stop_words, nltk_available,word_tokenize = self._get_nltk_components()
 
         # Extract text from liked tweets
         liked_texts = []
@@ -502,10 +558,10 @@ class TwitterPersonaGenerator:
         word_freq = Counter(words)
 
         # Use NLTK if available
-        if self.nltk_available:
+        if nltk_available:
             try:
                 words = word_tokenize(all_liked_text.lower())
-                filtered_words = [word for word in words if word.isalpha() and word not in self.stop_words and len(word) > 2]
+                filtered_words = [word for word in words if word.isalpha() and word not in stop_words and len(word) > 2]
                 word_freq = Counter(filtered_words)
             except Exception as e:
                 print(f"Error in NLTK processing for likes: {str(e)}")
@@ -626,7 +682,7 @@ class TwitterPersonaGenerator:
         return persona
 
 # Initialize the generator
-generator = TwitterPersonaGenerator()
+# generator = TwitterPersonaGenerator()
 
 
 @app.post("/upload-twitter-archive")
@@ -639,6 +695,7 @@ async def upload_twitter_archive(file: UploadFile = File(...)):
     - like.js (optional)
     - account.js (optional)
     """
+    generator = TwitterPersonaGenerator()
     
     # Validate file type
     if not file.filename.endswith('.zip'):
