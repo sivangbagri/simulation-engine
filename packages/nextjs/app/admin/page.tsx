@@ -1,15 +1,14 @@
 "use client"
 import React from 'react'
 import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
-import { useAccount } from "wagmi"
-
+ 
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts'
  
 import { PersonaArray } from './gaming_persona';
 
 
 const Admin: React.FC = () => {
-    const { writeContractAsync: writeYourContractAsync, isPending } = useScaffoldWriteContract({ contractName: "Persona" });
+    const { writeContractAsync: writeYourContractAsync } = useScaffoldWriteContract({ contractName: "Persona" });
     const privateKey = generatePrivateKey()
     const randomAccount = privateKeyToAccount(privateKey);
 
@@ -120,7 +119,6 @@ const Admin: React.FC = () => {
         }
       }
       
-    const { address: connectedAddress } = useAccount();
     const setNewPersona = async () => {
         try {
             await writeYourContractAsync(

@@ -1,5 +1,3 @@
-import { Persona } from "~~/types/simulation";
-
 export const PersonaArray = [
 
   {

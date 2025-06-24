@@ -1,11 +1,9 @@
 "use client"
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
-import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 import Link from "next/link"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "~~/components/ui/tabs"
 import { SimulationInput, SimulationOutput, Persona, Survey } from "~~/types/simulation"
 import PersonaCard, { PersonaCardSkeleton } from '~~/components/Persona/PersonaCard';
-import Incentivize from '~~/components/Incentivize';
 import {useAccount} from "wagmi"
 // Skeleton Components
 export const SkeletonBar = ({ width = "100%" }: { width?: string }) => (
@@ -85,7 +83,6 @@ const Result: React.FC = () => {
     const [initialLoading, setInitialLoading] = useState(true)
     const [niche, setNiche] = useState("")
     const [rewardsProcessed, setRewardsProcessed] = useState(false) // Track if rewards have been processed
-    const { writeContractAsync: writeYourContractAsync, isPending } = useScaffoldWriteContract({ contractName: "Persona" });
     const { address: connectedAddress } = useAccount();
      
     const { data: hasPersona } = useScaffoldReadContract({

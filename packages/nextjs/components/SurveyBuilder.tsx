@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Plus, Trash2, Download, Send, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Send, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTransition } from "react"
 // TypeScript interfaces
@@ -116,16 +116,16 @@ const SurveyBuilder: React.FC = () => {
         }));
     };
 
-    const exportSurvey = (): void => {
-        const dataStr = JSON.stringify(survey, null, 2);
-        const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-        const exportFileDefaultName = `${survey.title || 'survey'}.json`;
+    // const exportSurvey = (): void => {
+    //     const dataStr = JSON.stringify(survey, null, 2);
+    //     const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+    //     const exportFileDefaultName = `${survey.title || 'survey'}.json`;
 
-        const linkElement = document.createElement('a');
-        linkElement.setAttribute('href', dataUri);
-        linkElement.setAttribute('download', exportFileDefaultName);
-        linkElement.click();
-    };
+    //     const linkElement = document.createElement('a');
+    //     linkElement.setAttribute('href', dataUri);
+    //     linkElement.setAttribute('download', exportFileDefaultName);
+    //     linkElement.click();
+    // };
 
     const handleSubmit = (): void => {
         startTransition(() => {

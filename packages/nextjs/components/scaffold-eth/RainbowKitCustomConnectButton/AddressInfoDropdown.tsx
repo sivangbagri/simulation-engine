@@ -5,12 +5,10 @@ import { Address } from "viem";
 import { useDisconnect } from "wagmi";
 import {
   ArrowLeftOnRectangleIcon,
-  ArrowTopRightOnSquareIcon,
   ArrowsRightLeftIcon,
   CheckCircleIcon,
   ChevronDownIcon,
   DocumentDuplicateIcon,
-  QrCodeIcon,
   UserIcon
   
 } from "@heroicons/react/24/outline";
@@ -31,7 +29,7 @@ export const AddressInfoDropdown = ({
   address,
   ensAvatar,
   displayName,
-  blockExplorerAddressLink,
+  // blockExplorerAddressLink,
 }: AddressInfoDropdownProps) => {
   const { disconnect } = useDisconnect();
   const checkSumAddress = getAddress(address);

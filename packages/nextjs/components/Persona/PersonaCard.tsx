@@ -2,10 +2,8 @@ import {
   BarChart4,
   Hash,
   MapPin,
-  MessageSquareText,
+
   Sparkles,
-  UserPlus,
-  Users,
 } from "lucide-react"
 
 import { Badge } from "~~/components/ui/badge"
@@ -122,13 +120,6 @@ interface PersonaCardProps {
   data: PersonaData
 }
 
-// Helper for formatting large numbers
-const formatNumber = (num: number) => {
-  return new Intl.NumberFormat("en-US", {
-    notation: "compact",
-    maximumFractionDigits: 1,
-  }).format(num)
-}
 
 export default function PersonaCard({ data }: PersonaCardProps) {
   // Determine activity level and associated styling
@@ -182,17 +173,17 @@ export default function PersonaCard({ data }: PersonaCardProps) {
               {data.basic_info.username}
             </p>
             <p className="text-sm font-mono text-sky-400 hover:text-sky-300 transition-colors cursor-pointer">
-            @{data.basic_info.screen_name}
-          </p>
-           
+              @{data.basic_info.screen_name}
+            </p>
+
           </div>
 
           <Badge
-              className={`${activity.style} text-sm font-semibold rounded-full py-1 border transition-colors flex items-center gap-1.5 cursor-default my-2`}
-            >
-              <BarChart4 size={14} />
-              {activity.level}
-            </Badge>
+            className={`${activity.style} text-sm font-semibold rounded-full py-1 border transition-colors flex items-center gap-1.5 cursor-default my-2`}
+          >
+            <BarChart4 size={14} />
+            {activity.level}
+          </Badge>
           {data.basic_info.location && (
             <div className="flex items-center gap-2 text-sm text-white/50">
               <MapPin size={14} />

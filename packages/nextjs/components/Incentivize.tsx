@@ -28,7 +28,7 @@ const Incentivize: React.FC<IncentivizeDialogProps> = ({
         setMonAmount(value);
     };
 
-
+    setIsSubmitting(false) // hot fix 
 
     const currentAmount = monAmount[0];
 

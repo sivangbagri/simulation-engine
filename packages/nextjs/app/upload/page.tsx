@@ -3,7 +3,7 @@
 import React, { useState, useRef } from 'react';
 import { useAccount } from "wagmi";
 
-import { Upload, FileArchive, Download, ExternalLink, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Upload, Download, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import PersonaCard from "~~/components/Persona/PersonaCard"
 interface UploadState {
     isDragging: boolean;
@@ -240,13 +240,13 @@ const TwitterArchiveUploader: React.FC = () => {
         }
     };
 
-    const formatFileSize = (bytes: number): string => {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    };
+    // const formatFileSize = (bytes: number): string => {
+    //     if (bytes === 0) return '0 Bytes';
+    //     const k = 1024;
+    //     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    //     const i = Math.floor(Math.log(bytes) / Math.log(k));
+    //     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    // };
 
     return (
         <div className="min-h-screen bg-neutral-950 text-neutral-50 p-6">

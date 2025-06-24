@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useMemo } from 'react';
+import React, {useMemo } from 'react';
 import { Card } from '~~/components/ui/card';
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 
@@ -9,7 +9,6 @@ import { SkeletonText } from '../result/page';
 
 const Leaderboard: React.FC = () => {
     const { address: connectedAddress } = useAccount()
-    const username: Record<string,string> = {}
     const { data: leaderboardData, isFetched } = useScaffoldReadContract({
         contractName: "Persona",
         functionName: "getLeaderboard"

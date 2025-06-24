@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect } from 'react'
+import React from 'react'
 import { useAccount } from "wagmi"
 import PersonaCard from '~~/components/Persona/PersonaCard';
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
