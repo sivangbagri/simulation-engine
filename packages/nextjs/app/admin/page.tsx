@@ -4,7 +4,7 @@ import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
  
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts'
  
-import { PersonaArray } from './gaming_persona';
+// import { PersonaArray } from './gaming_persona';
 
 
 const Admin: React.FC = () => {
