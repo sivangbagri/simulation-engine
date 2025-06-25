@@ -1,8 +1,7 @@
 import {
   BarChart4,
   Hash,
-  MapPin,
-
+ 
   Sparkles,
 } from "lucide-react"
 
@@ -184,12 +183,12 @@ export default function PersonaCard({ data }: PersonaCardProps) {
             <BarChart4 size={14} />
             {activity.level}
           </Badge>
-          {data.basic_info.location && (
+          {/* {data.basic_info.location && (
             <div className="flex items-center gap-2 text-sm text-white/50">
               <MapPin size={14} />
               <span>{data.basic_info.location}</span>
             </div>
-          )}
+          )} */}
         </div>
       </div>
 

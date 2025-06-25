@@ -4,7 +4,7 @@ import { ThemeProvider } from "~~/components/ThemeProvider";
 import "~~/styles/globals.css";
 import { getMetadata } from "~~/utils/scaffold-eth/getMetadata";
 
-export const metadata = getMetadata({ title: "Simulation Engine", description: "Built with 🏗 Scaffold-ETH 2" });
+export const metadata = getMetadata({ title: "Zapp : Simulation Engine", description: "Zapp your idea now !" });
 
 const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
   return (

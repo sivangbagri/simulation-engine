@@ -303,10 +303,37 @@ const Result: React.FC = () => {
                             </>
                         )}
 
-                        {loading && (
-                            <div className="mt-4 flex items-center gap-2">
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                <span className="text-sm text-neutral-400">Processing survey results...</span>
+                        {!loading && (
+                            <div className="mt-4 flex flex-col gap-3">
+                                <div className="flex items-center gap-2">
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                    {/* <span className="text-sm text-neutral-400">Processing survey results...</span> */}
+
+                                    <div className="text-xs text-neutral-500 italic overflow-hidden h-4">
+                                        <div
+                                            className="transition-transform duration-500 ease-in-out"
+                                            style={{
+                                                transform: `translateY(-${(Math.floor(Date.now() / 100) % 8) * 16}px)`
+
+                                            }}
+                                        >
+                                            {[
+                                                " Did you know? Mario was originally called 'Jumpman'",
+                                                " Did you know? Pac-Man was inspired by a pizza with a missing slice",
+                                                " Did you know? The average gamer is 34 years old",
+                                                " Did you know? Tetris has been played by over 520 million people",
+                                                " Did you know? Space Invaders caused a coin shortage in Japan",
+                                                " Did you know? The first video game was created in 1958",
+                                                " Did you know? Minecraft is the best-selling game of all time",
+                                                " Did you know? World of Warcraft players have played over 10 million years collectively"
+                                            ].map((fact, index) => (
+                                                <div key={index} className="h-4 flex items-center font-semibold">
+                                                    {fact}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>
