@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
           blockNumber: receipt.blockNumber.toString()
         });
 
-        console.log(`✅ Rewarded ${participant.address}: ${hash}`);
+        // console.log(`✅ Rewarded ${participant.address}: ${hash}`);
       } catch (error: any) {
         console.error(`❌ Failed to reward ${participant.address}:`, error);
         results.push({

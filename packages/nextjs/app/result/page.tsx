@@ -125,7 +125,7 @@ const Result: React.FC = () => {
             });
             const result = await response.json();
             if (response.ok && result.success) {
-                console.log("✅ Rewards processed successfully:", result);
+                // console.log("✅ Rewards processed successfully:", result);
 
                 setRewardsProcessed(true);
             } else {
@@ -303,7 +303,7 @@ const Result: React.FC = () => {
                             </>
                         )}
 
-                        {!loading && (
+                        {loading && (
                             <div className="mt-4 flex flex-col gap-3">
                                 <div className="flex items-center gap-2">
                                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>

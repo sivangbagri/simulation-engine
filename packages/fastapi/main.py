@@ -14,6 +14,14 @@ import io
 import google.generativeai as genai
 import numpy as np
 from dotenv import load_dotenv
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import time
+from functools import lru_cache
+import hashlib
+import json
+import asyncio
+# import aiohttp
+
 load_dotenv()
 
 
@@ -28,49 +36,171 @@ class ModelManager:
     _sia = None
     _stop_words = None
     _word_tokenize = None
+    _embedding_cache = {}
+    _session = None
 
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def get_embeddings(self, texts: List[str]):
-        """Get embeddings using Gemini API"""
+    def __init__(self):
+        if not hasattr(self, 'initialized'):
+            self.initialized = True
+            self.executor = ThreadPoolExecutor(max_workers=4)
+            self._setup_session()
+
+    def _setup_session(self):
+        """Setup persistent HTTP session for API calls"""
+        if self._session is None:
+            import requests
+            self._session = requests.Session()
+            self._session.headers.update({
+                'Content-Type': 'application/json',
+                'User-Agent': 'PersonaSim/1.0'
+            })
+
+    def _cache_key(self, text: str) -> str:
+        """Generate cache key for text"""
+        return hashlib.md5(text.encode()).hexdigest()
+
+    async def get_embeddings_batch(self, texts: List[str], batch_size: int = 10):
+        """Get embeddings in batches with caching"""
         try:
-            model = genai.GenerativeModel('models/embedding-001')
-            embeddings = []
+            all_embeddings = []
 
-            for text in texts:
-                result = genai.embed_content(
-                    model="models/embedding-001",
-                    content=text,
-                    task_type="semantic_similarity"
-                )
-                embeddings.append(result['embedding'])
+            # Check cache first
+            cached_embeddings = {}
+            uncached_texts = []
+            text_to_index = {}
 
-            return np.array(embeddings)
+            for i, text in enumerate(texts):
+                cache_key = self._cache_key(text)
+                if cache_key in self._embedding_cache:
+                    cached_embeddings[i] = self._embedding_cache[cache_key]
+                else:
+                    text_to_index[len(uncached_texts)] = i
+                    uncached_texts.append(text)
+
+            # Process uncached texts in batches
+            new_embeddings = {}
+            if uncached_texts:
+                for i in range(0, len(uncached_texts), batch_size):
+                    batch = uncached_texts[i:i + batch_size]
+                    batch_embeddings = await self._get_embeddings_batch_api(batch)
+
+                    for j, embedding in enumerate(batch_embeddings):
+                        original_index = text_to_index[i + j]
+                        new_embeddings[original_index] = embedding
+                        # Cache the result
+                        cache_key = self._cache_key(uncached_texts[i + j])
+                        self._embedding_cache[cache_key] = embedding
+
+            # Combine cached and new embeddings
+            for i in range(len(texts)):
+                if i in cached_embeddings:
+                    all_embeddings.append(cached_embeddings[i])
+                else:
+                    all_embeddings.append(new_embeddings[i])
+
+            return np.array(all_embeddings)
 
         except Exception as e:
-            print(f"Gemini API error: {str(e)}")
-            return self._fallback_similarity(texts)
+            print(f"Batch embedding error: {str(e)}")
+            return self._fallback_similarity_batch(texts)
 
-    def _fallback_similarity(self, texts: List[str]):
-        """Simple fallback when API fails"""
+    async def _get_embeddings_batch_api(self, texts: List[str]):
+        """Get embeddings from API in batch"""
+        try:
+            model = 'models/embedding-001'
+
+            # Process texts concurrently
+            tasks = []
+            for text in texts:
+                task = self._get_single_embedding(model, text)
+                tasks.append(task)
+
+            embeddings = await asyncio.gather(*tasks, return_exceptions=True)
+
+            # Handle any exceptions
+            valid_embeddings = []
+            for i, embedding in enumerate(embeddings):
+                if isinstance(embedding, Exception):
+                    print(f"Error getting embedding for text {i}: {embedding}")
+                    # Use fallback for this text
+                    valid_embeddings.append(self._simple_embedding(texts[i]))
+                else:
+                    valid_embeddings.append(embedding)
+
+            return valid_embeddings
+
+        except Exception as e:
+            print(f"API batch error: {str(e)}")
+            return [self._simple_embedding(text) for text in texts]
+
+    async def _get_single_embedding(self, model, text: str):
+        """Get single embedding asynchronously"""
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(
+            self.executor,
+            lambda: genai.embed_content(
+                model=model,
+                content=text,
+                task_type="semantic_similarity"
+            )['embedding']
+        )
+
+    def _simple_embedding(self, text: str) -> List[float]:
+        """Simple embedding fallback"""
+        words = text.lower().split()
+        # Create a simple hash-based embedding
+        hash_val = hash(text) % (2**31)
+        embedding = [float((hash_val >> i) & 1)
+                     for i in range(384)]  # 384-dim vector
+        return embedding
+
+    def _fallback_similarity_batch(self, texts: List[str]):
+        """Batch fallback similarity"""
         embeddings = []
         for text in texts:
-            words = set(text.lower().split())
-            vector = [len(words & set(t.lower().split())) for t in texts]
-            embeddings.append(vector)
+            embedding = self._simple_embedding(text)
+            embeddings.append(embedding)
         return np.array(embeddings)
 
-    def cosine_similarity(self, vec1, vec2):
-        """Calculate cosine similarity"""
+    @lru_cache(maxsize=1000)
+    def cosine_similarity_cached(self, vec1_tuple, vec2_tuple):
+        """Cached cosine similarity"""
+        vec1 = np.array(vec1_tuple)
+        vec2 = np.array(vec2_tuple)
         dot_product = np.dot(vec1, vec2)
         norm1 = np.linalg.norm(vec1)
         norm2 = np.linalg.norm(vec2)
         if norm1 == 0 or norm2 == 0:
             return 0
         return dot_product / (norm1 * norm2)
+
+    def cosine_similarity(self, vec1, vec2):
+        """Calculate cosine similarity with caching"""
+        return self.cosine_similarity_cached(tuple(vec1), tuple(vec2))
+
+    def batch_cosine_similarity(self, persona_embedding, option_embeddings):
+        """Vectorized cosine similarity calculation"""
+        persona_embedding = np.array(persona_embedding).reshape(1, -1)
+        option_embeddings = np.array(option_embeddings)
+
+        # Vectorized cosine similarity
+        dot_products = np.dot(option_embeddings, persona_embedding.T).flatten()
+        norms1 = np.linalg.norm(option_embeddings, axis=1)
+        norm2 = np.linalg.norm(persona_embedding)
+
+        # Avoid division by zero
+        norms1[norms1 == 0] = 1e-8
+        if norm2 == 0:
+            norm2 = 1e-8
+
+        similarities = dot_products / (norms1 * norm2)
+        return similarities
+
     def get_nltk_components(self):
         if not self._nltk_initialized:
             try:
@@ -82,7 +212,7 @@ class ModelManager:
                 nltk.download('punkt', quiet=True)
                 nltk.download('stopwords', quiet=True)
                 nltk.download('vader_lexicon', quiet=True)
-                
+
                 from nltk.sentiment import SentimentIntensityAnalyzer
                 from nltk.corpus import stopwords
                 from nltk.tokenize import word_tokenize
@@ -94,19 +224,17 @@ class ModelManager:
             except Exception as e:
                 print(f"NLTK initialization error: {str(e)}")
                 self._nltk_initialized = False
-        
+
         return self._sia, self._stop_words, self._nltk_initialized, self._word_tokenize
 
-# Initialize model manager
-model_manager = ModelManager()
 
+async def simulate_optimized(input: SimulationInput):
+    """Optimized simulation with batching and caching"""
+    model_manager = ModelManager()
 
-@app.post("/simulate")
-def simulate(input: SimulationInput):
-    results = []
-
+    # Pre-process all persona summaries
+    persona_summaries = []
     for persona in input.personas:
-        # Create a flattened text summary of persona
         p = persona
         summary = " ".join([
             " ".join(p.interests),
@@ -115,51 +243,119 @@ def simulate(input: SimulationInput):
             " ".join(p.top_hashtags),
             " ".join(p.likes_analysis.get("liked_topics", []))
         ])
+        persona_summaries.append(summary)
 
-        # persona_embedding = model.encode(summary, convert_to_tensor=True)
+    # Pre-process all question-option combinations
+    all_question_options = []
+    question_option_map = {}
 
-        persona_result = {
-            "persona": p.basic_info.get("username", "unknown"),
-            "responses": []
-        }
-        # Process each question
-        for q in input.survey.questions:
-            option_texts = [f"{q.text} {opt.text}" for opt in q.options]
+    for q_idx, q in enumerate(input.survey.questions):
+        for opt_idx, opt in enumerate(q.options):
+            option_text = f"{q.text} {opt.text}"
+            all_question_options.append(option_text)
+            question_option_map[len(
+                all_question_options) - 1] = (q_idx, opt_idx)
 
-            # Get embeddings from OpenAI
-            all_texts = [summary] + option_texts
-            embeddings = model_manager.get_embeddings(all_texts)
+    # Get all embeddings in one batch
+    all_texts = persona_summaries + all_question_options
+    print(f"Getting embeddings for {len(all_texts)} texts...")
 
-            if len(embeddings) > 1:
-                persona_embedding = embeddings[0]
-                option_embeddings = embeddings[1:]
+    start_time = time.time()
+    all_embeddings = await model_manager.get_embeddings_batch(all_texts, batch_size=20)
+    embedding_time = time.time() - start_time
+    print(f"Embeddings completed in {embedding_time:.2f} seconds")
 
-                # Calculate similarities
-                similarities = []
-                for opt_embedding in option_embeddings:
-                    sim = model_manager.cosine_similarity(
-                        persona_embedding, opt_embedding)
-                    similarities.append(sim)
+    # Split embeddings
+    persona_embeddings = all_embeddings[:len(persona_summaries)]
+    option_embeddings = all_embeddings[len(persona_summaries):]
 
-                # Find best match
-                best_idx = np.argmax(similarities)
-                selected_option = q.options[best_idx]
-            else:
-                # Fallback: select first option
-                selected_option = q.options[0]
+    # Process results
+    results = []
 
-            persona_result["responses"].append({
-                "question_id": q.id,
-                "question": q.text,
-                "selected_option_id": selected_option.id,
-                "selected_option_text": selected_option.text
-            })
+    # Process personas in parallel
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        future_to_persona = {}
 
-        results.append(persona_result)
+        for p_idx, persona in enumerate(input.personas):
+            future = executor.submit(
+                process_persona_optimized,
+                persona,
+                persona_embeddings[p_idx],
+                input.survey,
+                option_embeddings,
+                question_option_map,
+                model_manager
+            )
+            future_to_persona[future] = p_idx
+
+        for future in as_completed(future_to_persona):
+            persona_idx = future_to_persona[future]
+            try:
+                persona_result = future.result()
+                results.append(persona_result)
+            except Exception as e:
+                print(f"Error processing persona {persona_idx}: {str(e)}")
+                # Add fallback result
+                results.append({
+                    "persona": input.personas[persona_idx].basic_info.get("username", "unknown"),
+                    "responses": []
+                })
 
     return {"results": results}
 
-    
+
+def process_persona_optimized(persona, persona_embedding, survey, option_embeddings, question_option_map, model_manager):
+    """Process a single persona optimized"""
+    persona_result = {
+        "persona": persona.basic_info.get("username", "unknown"),
+        "responses": []
+    }
+
+    # Process each question
+    current_option_idx = 0
+
+    for q_idx, q in enumerate(survey.questions):
+        num_options = len(q.options)
+
+        # Get embeddings for this question's options
+        question_option_embeddings = option_embeddings[current_option_idx:current_option_idx + num_options]
+
+        # Calculate similarities using vectorized operations
+        similarities = model_manager.batch_cosine_similarity(
+            persona_embedding, question_option_embeddings)
+
+        # Find best match
+        best_idx = np.argmax(similarities)
+        selected_option = q.options[best_idx]
+
+        persona_result["responses"].append({
+            "question_id": q.id,
+            "question": q.text,
+            "selected_option_id": selected_option.id,
+            "selected_option_text": selected_option.text
+        })
+
+        current_option_idx += num_options
+
+    return persona_result
+
+
+# Initialize model manager
+model_manager = ModelManager()
+
+
+@app.post("/simulate")
+async def simulate(input: SimulationInput):
+    """Optimized simulation endpoint"""
+    try:
+        start_time = time.time()
+        result = await simulate_optimized(input)
+        total_time = time.time() - start_time
+        print(f"Total simulation time: {total_time:.2f} seconds")
+        return result
+    except Exception as e:
+        print(f"Simulation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # Enable CORS for frontend integration
@@ -746,7 +942,6 @@ class TwitterPersonaGenerator:
         return persona
 
 
-
 @app.post("/upload-twitter-archive")
 async def upload_twitter_archive(file: UploadFile = File(...)):
     """
@@ -824,6 +1019,11 @@ async def upload_twitter_archive(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"An error occurred while processing your archive: {str(e)}")
+
+
+@app.get("/ping")
+async def ping():
+    return {"status": "alive"}
 
 
 if __name__ == "__main__":
