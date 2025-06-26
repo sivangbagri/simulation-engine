@@ -3,7 +3,7 @@ import { ScaffoldEthAppWithProviders } from "~~/components/ScaffoldEthAppWithPro
 import { ThemeProvider } from "~~/components/ThemeProvider";
 import "~~/styles/globals.css";
 import { getMetadata } from "~~/utils/scaffold-eth/getMetadata";
-
+import { Analytics } from "@vercel/analytics/next"
 export const metadata = getMetadata({ title: "Zapp : Simulation Engine", description: "Zapp your idea now !" });
 
 const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
@@ -11,6 +11,7 @@ const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
     <html suppressHydrationWarning>
       <body>
         <ThemeProvider enableSystem>
+          <Analytics/>
           <ScaffoldEthAppWithProviders>{children}</ScaffoldEthAppWithProviders>
         </ThemeProvider>
       </body>
